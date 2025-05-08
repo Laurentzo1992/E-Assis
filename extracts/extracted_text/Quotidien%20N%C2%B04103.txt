@@ -353,8 +353,8 @@ classé
 border eau des prix unitaires. D’où l’application des prix les 
 plus élevés pour ces items. Offre anormalement basse.  
 Total des offres conformes 9 983 095+  
-10 386 950+  
-9 735 590+  
+10 386 950+
+9 735 590+
 9 605 495+  
 10 377 746+  
 6 643 400+  

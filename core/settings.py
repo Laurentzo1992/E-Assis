@@ -28,7 +28,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'entreprise',
+
     'backend',
+    'authentication',
+
+
     'authentication',
 
 ]
@@ -72,6 +76,7 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+AUTH_USER_MODEL = 'authentication.Utilisateur'
 
 AUTH_USER_MODEL = 'authentication.Utilisateur'
 MONGO_DB = {
@@ -79,6 +84,11 @@ MONGO_DB = {
     'host': 'mongodb://localhost:27017'
 }
 
+
+MONGO_DB = {
+    'name': 'veille_marches_nosql',
+    'host': 'mongodb://localhost:27017'
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
