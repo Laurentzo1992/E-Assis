@@ -1,14 +1,8 @@
-<<<<<<< HEAD
-from django.db import models
-from entreprise.models import Domaine, Entreprise
-
-=======
-# backend/models.py
 
 from django.db import models
 from entreprise.models import Domaine, Entreprise
 
->>>>>>> dd2391c (models 0.1 . mongodb .)
+
 class Publication(models.Model):
     titre = models.CharField(max_length=255)
     numero = models.CharField(max_length=100)

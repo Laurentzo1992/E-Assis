@@ -78,11 +78,7 @@ DATABASES = {
 }
 AUTH_USER_MODEL = 'authentication.Utilisateur'
 
-AUTH_USER_MODEL = 'authentication.Utilisateur'
-MONGO_DB = {
-    'name': 'veille_marches_nosql',
-    'host': 'mongodb://localhost:27017'
-}
+
 
 
 MONGO_DB = {
