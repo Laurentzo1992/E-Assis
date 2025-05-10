@@ -29,9 +29,17 @@ class Marche(models.Model):
     description = models.TextField(blank=True, null=True)
 
 class AppelOffre(Marche):
-    date_ouverture_plis = models.DateField(blank=True, null=True)
-    conditions_participation = models.TextField(blank=True, null=True)
-    mode_passation = models.CharField(max_length=100, blank=True, null=True)
+    dateDepot = models.DateField(blank=True, null=True)
+    referenceDossier = models.CharField(max_length=255, blank=True, null=True)
+    lieuDepot = models.TextField(blank=True, null=True)
+    conditionsParticipation = models.TextField(blank=True, null=True)
+    criteresSelection = models.TextField(blank=True, null=True)
+    cautionnement = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    dureeValiditeOffres = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Appel d'Offre"
+        verbose_name_plural = "Appels d'Offres"
 
 class Resultat(Marche):
     entreprise_attributaire = models.ForeignKey(Entreprise, on_delete=models.SET_NULL, null=True, blank=True)

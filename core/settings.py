@@ -21,6 +21,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -28,14 +29,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'entreprise',
-
     'backend',
-    'authentication',
-
-
-    'authentication',
+    'authentication', 
+    'django_extensions',
+   
 
 ]
+GRAPH_MODELS ={
+    'all_applications': True,
+    'graph_models': True,
+     }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
