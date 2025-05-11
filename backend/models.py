@@ -8,25 +8,24 @@ class Publication(models.Model):
     numero = models.CharField(max_length=100)
     date_publication = models.DateField()
     source = models.CharField(max_length=255)
-    url = models.URLField(blank=True, null=True)
+    source_url = models.URLField(blank=True, null=True)
     domaines = models.ManyToManyField(Domaine, through='PublicationDomaine')
+    type_publicaton = models.CharField(max_length=100, blank = True , null= True )
+    #fichier_pdf = models.CharField(max_length=100 , blank= True, null= True)
+    #contenu_extrait = models.TextField(blank= True, null= True)
 
 class TypeProcedure(models.Model):
-    nom = models.CharField(max_length=100, unique=True)
+    libelle = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
 
 class Marche(models.Model):
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     type_procedure = models.ForeignKey(TypeProcedure, on_delete=models.SET_NULL, null=True)
-    reference = models.CharField(max_length=100)
-    objet = models.CharField(max_length=255)
-    autorite_contractante = models.CharField(max_length=255)
-    montant_estime = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
-    devise = models.CharField(max_length=10, default="XOF")
-    date_publication = models.DateField()
-    date_limite = models.DateField(blank=True, null=True)
-    lieu_execution = models.CharField(max_length=255, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
+    ministere = models.CharField(max_length=255, blank=True, null=True)
+    region = models.CharField(max_length=100, blank=True, null=True)
+    objet = models.TextField()
+    budget_min = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    budget_max = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
 
 class AppelOffre(Marche):
     dateDepot = models.DateField(blank=True, null=True)
@@ -41,25 +40,54 @@ class AppelOffre(Marche):
         verbose_name = "Appel d'Offre"
         verbose_name_plural = "Appels d'Offres"
 
-class Resultat(Marche):
-    entreprise_attributaire = models.ForeignKey(Entreprise, on_delete=models.SET_NULL, null=True, blank=True)
-    montant_attribue = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+
+class Resultat(models.Model):
+    marche = models.OneToOneField(Marche, on_delete=models.CASCADE, primary_key=True)
     date_attribution = models.DateField(blank=True, null=True)
+    entreprise_attributaire = models.ForeignKey(Entreprise, on_delete=models.SET_NULL, null=True, blank=True)
+    montant_attribue = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    reference_decision = models.CharField(max_length=255, blank=True, null=True)
+    nombre_offres_recues = models.IntegerField(blank=True, null=True)
+    delai_execution = models.CharField(max_length=255, blank=True, null=True)
+    motif_rejet_autres_offres = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'resultat'
+        verbose_name = 'Résultat d\'attribution'
+        verbose_name_plural = 'Résultats d\'attribution'
+
+    def __str__(self):
+        return f"Résultat pour marche {self.marche_id}"
 
 class Lot(models.Model):
-    marche = models.ForeignKey(Marche, on_delete=models.CASCADE)
-    numero_lot = models.CharField(max_length=50)
-    intitule = models.CharField(max_length=255)
-    montant = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True)
+    marche = models.ForeignKey(Marche, on_delete=models.CASCADE, related_name='lots')
+    numero_lot = models.IntegerField()
     description = models.TextField(blank=True, null=True)
+    montant = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+
+    class Meta:
+        db_table = 'lot'
+        verbose_name = 'Lot'
+        verbose_name_plural = 'Lots'
+
+    def __str__(self):
+        return f"Lot {self.numero_lot} - Marche {self.marche_id}"
 
 class Alerte(models.Model):
-    entreprise = models.ForeignKey(Entreprise, on_delete=models.CASCADE)
-    marche = models.ForeignKey(Marche, on_delete=models.CASCADE)
-    message = models.TextField()
-    date_envoi = models.DateTimeField(auto_now_add=True)
-    lue = models.BooleanField(default=False)
+    entreprise = models.ForeignKey(Entreprise, on_delete=models.CASCADE, related_name='alertes')
+    publication = models.ForeignKey(Publication, on_delete=models.CASCADE, related_name='alertes')
+    type_alerte = models.CharField(max_length=50)
+    date_alerte = models.DateTimeField()
+    contenu_alerte = models.TextField()
+    canal_alerte = models.CharField(max_length=30)
 
+    class Meta:
+        db_table = 'alerte'
+        verbose_name = 'Alerte'
+        verbose_name_plural = 'Alertes'
+
+    def __str__(self):
+        return f"Alerte {self.type_alerte} à {self.entreprise} le {self.date_alerte}"
 class PublicationDomaine(models.Model):
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     domaine = models.ForeignKey(Domaine, on_delete=models.CASCADE)
