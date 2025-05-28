@@ -24,7 +24,7 @@ urlpatterns = [
 
     # Routes API pour l'authentification
     path('api/auth/', include('authentication.urls')),
-
+ path('api/backend/', include('backend.urls')),
     # Routes API pour les entreprises
     path('api/entreprise/', include('entreprise.urls')),
 
@@ -33,5 +33,5 @@ urlpatterns = [
    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     # Routes API pour le backend (publications, marchés, etc.)
-   # path('api/backend/', include('backend.urls')),
+   #
 ]

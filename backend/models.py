@@ -10,7 +10,7 @@ class Publication(models.Model):
     source = models.CharField(max_length=255)
     source_url = models.URLField(blank=True, null=True)
     domaines = models.ManyToManyField(Domaine, through='PublicationDomaine')
-    type_publicaton = models.CharField(max_length=100, blank = True , null= True )
+    type_publication = models.CharField(max_length=100, blank=True, null=True)
     #fichier_pdf = models.CharField(max_length=100 , blank= True, null= True)
     #contenu_extrait = models.TextField(blank= True, null= True)
 
@@ -35,6 +35,7 @@ class AppelOffre(Marche):
     criteresSelection = models.TextField(blank=True, null=True)
     cautionnement = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     dureeValiditeOffres = models.CharField(max_length=255, blank=True, null=True)
+
 
     class Meta:
         verbose_name = "Appel d'Offre"
