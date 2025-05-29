@@ -1,5 +1,4 @@
 # entreprise/models.py
-
 from django.db import models
 
 class Domaine(models.Model):

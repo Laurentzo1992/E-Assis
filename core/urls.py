@@ -23,8 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Routes API pour l'authentification
-    path('api/auth/', include('authentication.urls')),
- path('api/backend/', include('backend.urls')),
+   path('api/auth/', include('authentication.urls')),
+   path('api/backend/', include('backend.urls')),
     # Routes API pour les entreprises
     path('api/entreprise/', include('entreprise.urls')),
 
