@@ -1,0 +1,72 @@
+tasks:
+  - name: extract_structure
+    agent: StructureAgent
+    description: >
+      Extract the document structure and section page numbers from the first page of a PDF.
+    expected_output: >
+      A dictionary mapping section names to their page ranges, for example:
+      {"Résultats": [2, 19], "Marchés de fournitures et services courants": [22, 28], "Marchés de travaux": [29, 34]}
+    inputs:
+      - page_text
+    outputs:
+      - section_map
+
+  - name: extract_results
+    agent: ResultExtractor
+    description: >
+      Extract contract awards and winning companies from the results section of the document.
+    expected_output: >
+      A list of dictionaries, each containing details of an awarded contract, e.g.:
+      [{"entreprise": "ABC SARL", "marche": {"intitule": "...", "montant": 123456, "domaine": "Travaux"}, "resultat": {"statut": "Attribué", "montant": 123456}, "publication": {"date_publication": "2025-06-01", "reference": "REF-2025-001"}}]
+    inputs:
+      - section_text
+    outputs:
+      - results_data
+
+  - name: extract_tenders
+    agent: TenderExtractor
+    description: >
+      Extract open tender information from the relevant section of the document.
+    expected_output: >
+      A list of dictionaries, each containing details of an open tender, e.g.:
+      [{"marche": {"intitule": "...", "montant": 123456, "domaine": "Fournitures"}, "publication": {"date_publication": "2025-06-01", "reference": "AO-2025-002"}}]
+    inputs:
+      - section_text
+    outputs:
+      - tenders_data
+
+  - name: extract_entities
+    agent: EntityExtractor
+    description: >
+      Extract structured entities such as companies, contracts, domains, and lots from any section.
+    expected_output: >
+      A dictionary with keys for each entity type, e.g.:
+      {"entreprises": [...], "marches": [...], "lots": [...], "domaines": [...], "typeprocedures": [...]}
+    inputs:
+      - section_text
+    outputs:
+      - entities
+
+  - name: tag_data
+    agent: Tagger
+    description: >
+      Assign tags and categories (such as domain, sector, region, or procedure type) to each extracted entity.
+    expected_output: >
+      The input entities, now with additional tags or categories added as fields, e.g.:
+      {"marches": [{"intitule": "...", "tags": ["Travaux", "AO ouvert"]}], ...}
+    inputs:
+      - entities
+    outputs:
+      - tagged_entities
+
+  - name: trigger_alerts
+    agent: AlertAgent
+    description: >
+      Check extracted and tagged data against company interests and trigger alerts if relevant.
+    expected_output: >
+      A list of alert objects, each containing the company, the matching opportunity or result, and the alert message, e.g.:
+      [{"entreprise": "ABC SARL", "marche": "Construction d'une école", "message": "Nouvelle attribution dans votre domaine"}]
+    inputs:
+      - tagged_entities
+    outputs:
+      - alerts
