@@ -2,10 +2,9 @@ tasks:
   - name: extract_structure
     agent: StructureAgent
     description: >
-      Extract the document structure and section page numbers from the first page of a PDF.
+      Extraire la structure du document et les numéros de pages des sections à partir de la première page du PDF.
     expected_output: >
-      A dictionary mapping section names to their page ranges, for example:
-      {"Résultats": [2, 19], "Marchés de fournitures et services courants": [22, 28], "Marchés de travaux": [29, 34]}
+      Un dictionnaire mappant les noms de sections à leurs plages de pages.
     inputs:
       - page_text
     outputs:
@@ -14,10 +13,9 @@ tasks:
   - name: extract_results
     agent: ResultExtractor
     description: >
-      Extract contract awards and winning companies from the results section of the document.
+      Extraire les attributions de marchés et les entreprises gagnantes de la section résultats.
     expected_output: >
-      A list of dictionaries, each containing details of an awarded contract, e.g.:
-      [{"entreprise": "ABC SARL", "marche": {"intitule": "...", "montant": 123456, "domaine": "Travaux"}, "resultat": {"statut": "Attribué", "montant": 123456}, "publication": {"date_publication": "2025-06-01", "reference": "REF-2025-001"}}]
+      Une liste de dictionnaires contenant les détails de chaque marché attribué.
     inputs:
       - section_text
     outputs:
@@ -26,10 +24,9 @@ tasks:
   - name: extract_tenders
     agent: TenderExtractor
     description: >
-      Extract open tender information from the relevant section of the document.
+      Extraire les informations sur les appels d'offres ouverts.
     expected_output: >
-      A list of dictionaries, each containing details of an open tender, e.g.:
-      [{"marche": {"intitule": "...", "montant": 123456, "domaine": "Fournitures"}, "publication": {"date_publication": "2025-06-01", "reference": "AO-2025-002"}}]
+      Une liste de dictionnaires contenant les détails de chaque appel d'offre ouvert.
     inputs:
       - section_text
     outputs:
@@ -38,10 +35,9 @@ tasks:
   - name: extract_entities
     agent: EntityExtractor
     description: >
-      Extract structured entities such as companies, contracts, domains, and lots from any section.
+      Extraire les entités structurées (entreprises, contrats, domaines, lots).
     expected_output: >
-      A dictionary with keys for each entity type, e.g.:
-      {"entreprises": [...], "marches": [...], "lots": [...], "domaines": [...], "typeprocedures": [...]}
+      Un dictionnaire avec les clés pour chaque type d'entité.
     inputs:
       - section_text
     outputs:
@@ -50,10 +46,9 @@ tasks:
   - name: tag_data
     agent: Tagger
     description: >
-      Assign tags and categories (such as domain, sector, region, or procedure type) to each extracted entity.
+      Assigner des tags et catégories à chaque entité extraite.
     expected_output: >
-      The input entities, now with additional tags or categories added as fields, e.g.:
-      {"marches": [{"intitule": "...", "tags": ["Travaux", "AO ouvert"]}], ...}
+      Les entités en entrée, enrichies de tags ou catégories.
     inputs:
       - entities
     outputs:
@@ -62,10 +57,9 @@ tasks:
   - name: trigger_alerts
     agent: AlertAgent
     description: >
-      Check extracted and tagged data against company interests and trigger alerts if relevant.
+      Déclencher des alertes pour les entreprises selon leurs intérêts.
     expected_output: >
-      A list of alert objects, each containing the company, the matching opportunity or result, and the alert message, e.g.:
-      [{"entreprise": "ABC SARL", "marche": "Construction d'une école", "message": "Nouvelle attribution dans votre domaine"}]
+      Une liste d'alertes, chacune contenant l'entreprise, l'opportunité ou le résultat correspondant, et le message d'alerte.
     inputs:
       - tagged_entities
     outputs:

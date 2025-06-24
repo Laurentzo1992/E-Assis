@@ -1,14 +1,9 @@
 import os
 import yaml
-
-# Use relative imports for tools (works with both module and script execution)
+import ast
 from .tools.pdf_utils import extract_text_from_pdf
-from .tools.django_mapper import save_extracted_data
-
-# Import CrewAI core classes (adjust if your package is different)
 from crewai import Crew, Agent, Task
 
-# --- Load YAML Configs ---
 def load_yaml_config(filename):
     config_dir = os.path.join(os.path.dirname(__file__), 'config')
     with open(os.path.join(config_dir, filename), 'r') as f:
@@ -17,7 +12,6 @@ def load_yaml_config(filename):
 agents_yaml = load_yaml_config('agents.yaml')
 tasks_yaml = load_yaml_config('tasks.yaml')
 
-# --- Build Agents ---
 all_agents = {}
 for agent_conf in agents_yaml['agents']:
     agent = Agent(
@@ -25,13 +19,14 @@ for agent_conf in agents_yaml['agents']:
         role=agent_conf.get('role', ''),
         goal=agent_conf.get('goal', ''),
         backstory=agent_conf.get('backstory', ''),
-        verbose=True,
-        allow_delegation=True,
-         llm=agent_conf.get('llm')  
+        verbose=agent_conf.get('verbose', True),
+        allow_delegation=agent_conf.get('allow_delegation', False),
+        max_retry_limit=agent_conf.get('max_retry_limit', 3),
+        llm=agent_conf.get('llm'),
+        prompt_template=agent_conf.get('prompt_template', None)
     )
     all_agents[agent_conf['name']] = agent
 
-# --- Build Tasks (ensure 'name' attribute is set!) ---
 all_tasks = []
 for task_conf in tasks_yaml['tasks']:
     agent_name = task_conf['agent']
@@ -39,29 +34,27 @@ for task_conf in tasks_yaml['tasks']:
     if not agent_instance:
         raise ValueError(f"Agent '{agent_name}' not found for task '{task_conf['name']}'")
     task = Task(
-        name=task_conf['name'],  # This is crucial!
+        name=task_conf['name'],
         description=task_conf['description'],
         agent=agent_instance,
         expected_output=task_conf['expected_output'],
-        # Optionally add inputs/outputs if your Task class supports them
-        # inputs=task_conf.get('inputs', []),
-        # outputs=task_conf.get('outputs', []),
     )
     all_tasks.append(task)
 
-# --- Create Crew ---
 my_crew_instance = Crew(
     agents=list(all_agents.values()),
     tasks=all_tasks,
     verbose=True
 )
 
-# --- Document Processing Function ---
 def process_document(pdf_path):
-    print(f"Starting document processing for: {pdf_path}")
-    page_text = extract_text_from_pdf(pdf_path, page_number=0)
-    # CrewAI v0.20+ uses .kickoff(), not .run()
+    print(f"Traitement du document : {pdf_path}")
+    page_text = extract_text_from_pdf(pdf_path, page_number=0)  # Page 0 pour un PDF d'une page
     structure_result = my_crew_instance.kickoff(inputs={'page_text': page_text})
-    print(f"Structure extracted: {structure_result}")
-    # You can save or further process the result here
-    # save_extracted_data(structure_result)
+    print(f"Structure extraite : {structure_result}")
+    # Exemple de parsing si la sortie est du texte Python
+    try:
+        toc = ast.literal_eval(structure_result['section_map'])
+        print("Table des matières structurée :", toc)
+    except Exception as e:
+        print("Erreur de parsing :", e)

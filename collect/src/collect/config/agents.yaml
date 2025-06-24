@@ -1,54 +1,135 @@
 agents:
   - name: StructureAgent
-    role: Document Structure Extractor
-    goal: Extract structure from PDF
-    backstory: Expert at analyzing procurement bulletins.
+    role: Extracteur de Structure de Document
+    goal: Extraire la structure (sections et pages) du sommaire d’un PDF.
+    backstory: Expert en analyse des bulletins de marchés publics.
     llm:
       provider: ollama
       base_url: http://178.32.42.24:11434
-      model: mistral:7b
+      model: llama3.1:latest
+    verbose: true
+    allow_delegation: false
+    max_retry_limit: 3
+    prompt_template: |
+      Vous êtes un expert en extraction d'informations structurées à partir de bulletins officiels.
+      Voici le Sommaire (table des matières) d'un bulletin des marchés publics :
+      ---
+      {page_text}
+      ---
+      Votre tâche : Retourner une liste Python de dictionnaires, chacun avec les clés "titre", "page_debut", "page_fin", et "sous_sections" (une liste de dicts avec les mêmes clés).
+      Format exemple :
+      [
+        {
+          "titre": "...",
+          "page_debut": ...,
+          "page_fin": ...,
+          "sous_sections": [
+            {"titre": "...", "page_debut": ..., "page_fin": ...}
+          ]
+        }
+      ]
+      Utilisez uniquement les informations du Sommaire. N'inventez pas et ne modifiez pas les titres ou numéros de pages.
 
   - name: ResultExtractor
-    role: Contract Award Extractor
-    goal: Extract contract awards and winners.
-    backstory: Specialist in contract result parsing.
+    role: Extracteur de Résultats d'Attribution
+    goal: Extraire les attributions de marchés et les entreprises gagnantes de la section résultats.
+    backstory: Spécialiste de l’analyse des résultats de marchés publics.
     llm:
       provider: ollama
       base_url: http://178.32.42.24:11434
-      model: mistral:7b
+      model: llama3.1:latest
+    verbose: true
+    allow_delegation: false
+    max_retry_limit: 3
+    prompt_template: |
+      Extrayez tous les marchés attribués du texte de section suivant.
+      Pour chaque marché, retournez un dictionnaire avec :
+        - "entreprise": nom de l'entreprise gagnante
+        - "marche": { "intitule": ..., "montant": ..., "domaine": ... }
+        - "resultat": { "statut": ..., "montant": ... }
+        - "publication": { "date_publication": ..., "reference": ... }
+      Texte de la section :
+      ---
+      {section_text}
+      ---
 
   - name: TenderExtractor
-    role: Tender Extractor
-    goal: Extract open tender information.
-    backstory: Skilled at parsing tender data.
+    role: Extracteur d'Appels d'Offres
+    goal: Extraire les informations sur les appels d'offres ouverts.
+    backstory: Expert en extraction d’appels d’offres dans les documents publics.
     llm:
       provider: ollama
       base_url: http://178.32.42.24:11434
-      model: mistral:7b
+      model: llama3.1:latest
+    verbose: true
+    allow_delegation: false
+    max_retry_limit: 3
+    prompt_template: |
+      Extrayez tous les appels d'offres ouverts du texte de section suivant.
+      Pour chaque appel d'offre, retournez un dictionnaire avec :
+        - "marche": { "intitule": ..., "montant": ..., "domaine": ... }
+        - "publication": { "date_publication": ..., "reference": ... }
+      Texte de la section :
+      ---
+      {section_text}
+      ---
 
   - name: EntityExtractor
-    role: Entity Extraction Specialist
-    goal: Extract companies, contracts, domains, and lots.
-    backstory: Expert at finding and normalizing entities.
+    role: Spécialiste en Extraction d'Entités
+    goal: Extraire entreprises, contrats, domaines et lots.
+    backstory: Expert en identification et normalisation d’entités dans les marchés publics.
     llm:
       provider: ollama
       base_url: http://178.32.42.24:11434
-      model: mistral:7b
+      model: llama3.1:latest
+    verbose: true
+    allow_delegation: false
+    max_retry_limit: 3
+    prompt_template: |
+      Extrayez et normalisez toutes les entités (entreprises, contrats, domaines, lots, procédures) du texte ci-dessous.
+      Retournez un dictionnaire avec les clés : "entreprises", "marches", "lots", "domaines", "typeprocedures".
+      Texte de la section :
+      ---
+      {section_text}
+      ---
 
   - name: Tagger
-    role: Data Tagger
-    goal: Assign tags and categories.
-    backstory: Categorizes and enriches extracted data.
+    role: Étiqueteur de Données
+    goal: Assigner des tags et catégories à chaque entité extraite.
+    backstory: Vous enrichissez les données de marchés publics pour la recherche.
     llm:
       provider: ollama
       base_url: http://178.32.42.24:11434
-      model: mistral:7b
+      model: llama3.1:latest
+    verbose: true
+    allow_delegation: false
+    max_retry_limit: 3
+    prompt_template: |
+      Ajoutez des tags et catégories pertinents (domaine, secteur, région, type de procédure) à chaque entité dans les données suivantes.
+      Retournez la même structure, mais avec un champ "tags" ajouté à chaque entité.
+      Données :
+      ---
+      {entities}
+      ---
 
   - name: AlertAgent
-    role: Alert Trigger Agent
-    goal: Trigger alerts for company interests.
-    backstory: Matches opportunities to company profiles.
+    role: Agent Déclencheur d'Alertes
+    goal: Déclencher des alertes pour les intérêts des entreprises.
+    backstory: Vous faites correspondre les opportunités et résultats aux profils d'entreprises.
     llm:
       provider: ollama
       base_url: http://178.32.42.24:11434
-      model: mistral:7b
+      model: llama3.1:latest
+    verbose: true
+    allow_delegation: false
+    max_retry_limit: 3
+    prompt_template: |
+      Pour chaque entreprise dans la base, vérifiez si une entité extraite ou taguée correspond à ses intérêts.
+      Pour chaque correspondance, retournez un dictionnaire avec :
+        - "entreprise": nom de l'entreprise
+        - "marche": marché correspondant
+        - "message": message d'alerte
+      Données :
+      ---
+      {tagged_entities}
+      ---
