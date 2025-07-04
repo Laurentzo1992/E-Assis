@@ -31,7 +31,10 @@ class Utilisateur(AbstractUser):
     entreprise = models.ForeignKey(Entreprise, on_delete=models.SET_NULL, null=True, blank=True)
     telephone = models.CharField(max_length=50, blank=True, null=True)
     notifications_actives = models.BooleanField(default=True)
-
+    active_entreprise = models.ForeignKey(
+        Entreprise, null=True, blank=True, on_delete=models.SET_NULL, related_name='active_users'
+    )
+    is_email_verified = models.BooleanField(default=False)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 

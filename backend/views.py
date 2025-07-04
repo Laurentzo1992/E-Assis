@@ -11,6 +11,8 @@ from .serializers import (
     , AlerteSerializer
 )
 
+
+
 # Publication
 class PublicationViewSet(viewsets.ModelViewSet):
     queryset = Publication.objects.all().order_by('-date_publication')

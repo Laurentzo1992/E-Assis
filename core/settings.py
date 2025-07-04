@@ -1,4 +1,5 @@
-
+import os
+from decouple import config
 
 from pathlib import Path
 
@@ -41,10 +42,27 @@ INSTALLED_APPS = [
     'entreprise',
     'backend',
     'authentication', 
-    'django_extensions',
+    'django_extensions',    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
    
 
 ]
+AUTH_USER_MODEL = 'authentication.Utilisateur'
+AaCCOUNT_USER_MODEL_USERNAME_FIELD = None  # Indique qu'il n'y a pas de champ username
+ACCOUNT_USERNAME_REQUIRED = False        # Pas de champ username obligatoire
+ACCOUNT_AUTHENTICATION_METHOD = 'email' # Authentification via email uniquement
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # ou 'optional' selon votre choix
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+SITE_ID = 1
 GRAPH_MODELS ={
     'all_applications': True,
     'graph_models': True,
@@ -59,11 +77,32 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+    
+   
 
 ]
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
 
 ROOT_URLCONF = 'core.urls'
+LOGIN_REDIRECT_URL = '/'  # URL de redirection après connexion réussie
+LOGOUT_REDIRECT_URL = '/'  # URL après déconnexion
 
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -106,7 +145,7 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-AUTH_USER_MODEL = 'authentication.Utilisateur'
+
 
 
 CORS_ALLOWED_ORIGINS = [
