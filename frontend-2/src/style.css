@@ -1,0 +1,1547 @@
+:root {
+  --blueMain: #003865;
+  --orange: #ef5b0c;
+  --gray: #d9d9d9;
+}
+
+/* Prévention globale du scroll horizontal */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* SECTION VISION - Style moderne */
+.sectionColor2 {
+  background: linear-gradient(
+    135deg,
+    var(--blueMain) 0%,
+    var(--brown) 50%,
+    var(--orange) 100%
+  );
+  padding: 20px 0px 100px 0px;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.vision-text-container {
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.vision-content {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+
+  padding: 40px;
+
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transform: translateZ(0);
+}
+
+.vision-text {
+  color: white;
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1.8;
+  margin: 0;
+  text-align: center;
+}
+
+.vision-image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+/* .vision-image-wrapper {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+} */
+
+/* .VisionImg {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  border-radius: 20px;
+  transition: transform 0.3s ease;
+} */
+
+/* .VisionImg:hover {
+  transform: scale(1.05);
+} */
+
+.existense {
+  line-height: 3;
+  font-size: 1.8rem;
+  color: black;
+  font-weight: lighter;
+  text-align: center;
+  margin-top: 61px;
+}
+
+.titleColor {
+  color: #003865;
+  font-weight: bold;
+}
+.titleColor1 {
+  color: #d9d9d9;
+  font-weight: bold;
+}
+
+.Navbar {
+  background-color: var(--blueMain);
+}
+
+.header-gradient {
+  background: linear-gradient(to right, #003865 1%, #c0612e 100%);
+  padding: 100px 20px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  /* margin-bottom: -16px; */
+}
+
+.triangle {
+  position: absolute;
+  z-index: 0;
+  opacity: 1;
+}
+
+/* Triangle en bas à gauche */
+.bottom-left {
+  bottom: 0;
+  left: -10px;
+}
+
+/* Triangle en haut à droite (inversé) */
+.top-right {
+  top: 0;
+  right: -10px;
+  transform: rotate(180deg);
+}
+
+.header-gradient h1,
+.header-gradient h3 {
+  padding: 10px 60px;
+}
+
+.header-gradient button {
+  font-size: 1rem;
+  padding: 10px 20px;
+  background-color: #ef5b0c;
+  color: white;
+  border-radius: 50px;
+}
+
+.sectionColor1 {
+  background-color: white;
+  overflow: hidden;
+  position: relative;
+  height: 500px;
+  /* border-radius: 20px; */
+}
+
+/* Corrections pour éviter le scroll horizontal */
+.sectionColor1 .container-fluid,
+.sectionColor2 .container-fluid {
+  padding-left: 15px;
+  padding-right: 15px;
+  max-width: 100%;
+}
+
+.sectionColor1 .row,
+.sectionColor2 .row,
+.mb-5 .row {
+  margin-left: 0;
+  margin-right: 0;
+  max-width: 100%;
+}
+
+.sectionColor1 .row > [class*="col-"],
+.sectionColor2 .row > [class*="col-"],
+.mb-5 .row > [class*="col-"] {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/* Style pour le triangle dans la section mission */
+.mission-triangle {
+  position: absolute;
+  bottom: -3px;
+  left: 1px;
+  z-index: 1;
+  max-width: 100vw;
+  height: 95%;
+  pointer-events: none; /* Évite les interactions */
+}
+
+/* Style pour l'image de mission - au premier plan */
+.MissionImg {
+  position: relative;
+  z-index: 2;
+  max-width: 100%;
+  height: 300px;
+  margin-top: 80px;
+  left: 3px;
+}
+.VisionImg {
+  height: auto;
+}
+
+.sectionColor2 {
+  background: linear-gradient(to right, #c0612e 0%, #003865 92%);
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Section Features - Style carte moderne */
+.features-section {
+  padding: 60px 0;
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+}
+
+.feature-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 30px;
+  text-align: center;
+  height: 100%;
+  box-shadow: 0 10px 40px rgba(0, 56, 101, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 56, 101, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--blueMain) 0%, var(--orange) 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 60px rgba(0, 56, 101, 0.15);
+}
+
+.feature-card:hover::before {
+  transform: scaleX(1);
+}
+
+.feature-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 25px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 56, 101, 0.1) 0%,
+    rgba(239, 91, 12, 0.1) 100%
+  );
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 56, 101, 0.15) 0%,
+    rgba(239, 91, 12, 0.15) 100%
+  );
+  transform: scale(1.1);
+}
+
+.feature-title {
+  color: var(--blueMain);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  line-height: 1.3;
+}
+
+.feature-description {
+  color: #6c757d;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.sectionColor3 {
+  background-color: #003865;
+  padding: 10px;
+  color: white;
+  height: 200px;
+  background-color: #003865;
+  margin-bottom: -1px;
+}
+
+.startFreeBtn {
+  font-size: 1rem;
+  padding: 10px 20px;
+  background-color: #ef5b0c;
+  color: white;
+  border-radius: 50px;
+}
+
+.section3-h1 {
+  margin-top: 20px;
+}
+
+/* Responsive pour les cartes features */
+@media (max-width: 768px) {
+  .features-section {
+    padding: 40px 0;
+  }
+
+  .feature-card {
+    padding: 30px 20px;
+    margin-bottom: 30px;
+  }
+
+  .feature-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 20px;
+  }
+
+  .feature-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .feature-title {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+  }
+
+  .feature-description {
+    font-size: 0.9rem;
+  }
+}
+
+.paintSvg {
+  padding: 0px;
+  margin-bottom: 2px;
+  height: 50%;
+}
+
+@media (max-width: 768px) {
+  .vision-text {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.6;
+    margin: 0;
+    text-align: center;
+  }
+  .triangle {
+    width: 120px;
+    opacity: 1;
+  }
+
+  .bottom-left {
+    bottom: -63px;
+    left: 0px;
+  }
+
+  .top-right {
+    top: -63px;
+    right: 0px;
+    transform: rotate(180deg);
+  }
+
+  .header-gradient {
+    padding: 80px 16px;
+  }
+
+  .header-gradient h1 {
+    font-size: 1.7rem;
+    line-height: 1.4;
+  }
+
+  .header-gradient h3 {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .header-gradient button {
+    font-size: 1rem;
+    padding: 10px 20px;
+    background-color: #ef5b0c;
+    color: white;
+    border-radius: 50px;
+  }
+
+  .sectionColor1 {
+    background-color: white;
+    height: 620px;
+    width: 100%;
+    max-width: 100vw; /* Limite importante */
+    padding: 18px;
+    font-size: 14px;
+    box-sizing: border-box;
+    overflow: hidden; /* Empêche le débordement */
+    border-radius: 0;
+  }
+
+  .MissionImg {
+    margin-top: 120px;
+    margin-right: 40px;
+    position: relative;
+    z-index: 2;
+    height: auto;
+    max-width: 100%;
+    width: auto;
+  }
+
+  .VisionImg {
+    height: 200px;
+    max-width: 100%;
+    margin-right: 40px;
+    margin-bottom: 12px;
+  }
+
+  /* Triangle sur mobile - correction majeure */
+  .mission-triangle {
+    opacity: 1;
+    bottom: -53px;
+    z-index: 1;
+    left: 0; /* Suppression du left négatif problématique */
+
+    max-width: 100vw;
+    transform: none; /* Évite les transformations qui peuvent déborder */
+  }
+
+  .existense {
+    line-height: 2.7;
+    font-size: 17px;
+    color: black;
+    font-weight: lighter;
+    text-align: center;
+    margin-left: 0px;
+    margin-top: 60px;
+  }
+  .p-section2 {
+    line-height: 3;
+    font-weight: bold;
+    color: white;
+    font-size: 17px;
+    margin-top: 35px;
+  }
+
+  .sectionColor2 {
+    background: linear-gradient(to right, #c0612e 0%, #003865 92%);
+    color: white;
+    height: fit-content;
+    width: 100%;
+    max-width: 100vw; /* Limite importante */
+    padding: 18px;
+    font-size: 14px;
+    box-sizing: border-box;
+    overflow: hidden; /* Empêche le débordement */
+  }
+
+  /* Corrections supplémentaires pour les colonnes sur mobile */
+  .col-6 {
+    max-width: 50%;
+    flex: 0 0 50%;
+  }
+
+  .sectionColor3 {
+    background-color: #003865;
+    padding: 10px;
+    color: white;
+    height: 200px;
+    background-color: #003865;
+    margin-bottom: -1px;
+  }
+
+  .startFreeBtn {
+    font-size: 1rem;
+    padding: 10px 20px;
+    background-color: #ef5b0c;
+    color: white;
+    border-radius: 50px;
+  }
+  .section3-h1 {
+    font-size: 16px;
+  }
+
+  .paintSvg {
+    width: 100%;
+    padding: 0px;
+    margin-bottom: 15px;
+    height: 100%;
+  }
+}
+
+/* Corrections générales pour tous les écrans */
+* {
+  box-sizing: border-box;
+}
+
+.container-fluid {
+  padding-left: 15px;
+  padding-right: 15px;
+  max-width: 100%;
+}
+
+section {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Footer Moderne */
+.modern-footer {
+  background: linear-gradient(135deg, var(--blueMain) 0%, #002347 100%);
+  color: white;
+  padding: 60px 0 0;
+  margin-top: -100px;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  margin-top: 50px;
+}
+
+.footer-title {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.footer-title::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange), #ff7b3d);
+  border-radius: 2px;
+}
+
+.footer-description {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 12px;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: var(--orange);
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.contact-icon {
+  margin-right: 12px;
+  font-size: 1.1rem;
+}
+
+.social-links {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.social-link:hover {
+  color: var(--orange);
+  background: rgba(239, 91, 12, 0.1);
+  transform: translateY(-2px);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 25px 0;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.copyright {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modern-footer {
+    margin-top: -25px;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    text-align: center;
+  }
+
+  .footer-title::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .social-links {
+    justify-content: center;
+  }
+
+  .contact-item {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 992px) and (min-width: 769px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 35px;
+  }
+}
+
+/* Styles pour le formulaire d'inscription */
+/* background: linear-gradient(to right, #ef5b0c 0%, #003865 100%); */
+.custom-bg {
+  background: var(--blueMain);
+  min-height: 100vh;
+}
+
+.custom-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.custom-input {
+  background-color: #d9d9d9;
+  border: 2px solid #d9d9d9;
+  border-radius: 12px;
+  padding-left: 3rem;
+  padding-right: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  max-width: 400px; /* Limiter la largeur */
+  height: 48px; /* Hauteur plus standard */
+}
+
+.custom-input:focus {
+  background-color: #d9d9d9;
+  border-color: #003865;
+  box-shadow: 0 0 0 0.2rem rgba(0, 56, 101, 0.25);
+}
+
+.custom-input.is-invalid {
+  border-color: #dc3545;
+}
+
+.input-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #003865;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.custom-btn {
+  background-color: #ef5b0c;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  padding: 12px 24px;
+  transition: all 0.3s ease;
+}
+
+.custom-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 56, 101, 0.3);
+}
+
+.custom-btn:disabled {
+  opacity: 0.5;
+  transform: none;
+}
+
+.text-primary-custom {
+  color: #003865 !important;
+}
+
+.text-orange-custom {
+  color: #ef5b0c !important;
+}
+
+.text-orange-custom:hover {
+  color: #d84e0a !important;
+  text-decoration: underline;
+}
+.acceuil-back-link {
+  color: #ef5b0c;
+}
+
+/* style pour mon formulaire de connexion */
+/* Wrapper principal */
+.connexion-wrapper {
+  background-color: #003865;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px; /* Padding pour les bords sur mobile */
+}
+
+/* Container du formulaire */
+.connexion-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Card principale */
+.connexion-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Icône principale */
+.connexion-icon {
+  width: 60px; /* Plus grande */
+  height: 60px;
+  background-color: var(--blueMain); /* Fond bleu */
+  border-radius: 50%; /* Cercle parfait */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white; /* Couleur de l'icône en blanc */
+  margin: 0 auto 25px auto; /* Centrage et marge inférieure */
+}
+
+/* Titre */
+.connexion-title {
+  color: var(--blueMain);
+  font-weight: 700;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+/* Sous-titre */
+.connexion-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+/* Groupes d'input */
+.connexion-input-group {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Icônes des inputs */
+.connexion-input-icon {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-right: none;
+  color: #64748b;
+  width: 50px;
+  justify-content: center;
+}
+
+/* Inputs */
+.connexion-input {
+  border: 1px solid #e2e8f0;
+  border-left: none;
+  padding: 12px 16px;
+  font-size: 16px;
+  background-color: white;
+  color: var(--blueMain);
+}
+
+.connexion-input:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 0.2rem rgba(239, 91, 12, 0.25);
+  background-color: white;
+}
+
+.connexion-input::placeholder {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* Bouton toggle mot de passe */
+.connexion-password-toggle {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-left: none;
+  color: #64748b;
+  padding: 0 12px;
+}
+
+.connexion-password-toggle:hover {
+  background-color: #f8fafc;
+  color: var(--orange);
+}
+
+/* Checkbox personnalisée */
+.connexion-checkbox {
+  accent-color: var(--orange);
+  width: 16px;
+  height: 16px;
+}
+
+.connexion-checkbox-label {
+  color: #374151;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+/* Lien mot de passe oublié */
+.connexion-forgot-link {
+  color: var(--orange);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.connexion-forgot-link:hover {
+  color: #d45502;
+  text-decoration: underline;
+}
+
+/* Bouton principal */
+.connexion-btn-primary {
+  background-color: #ef5b0c;
+  border: none;
+  border-radius: 22px;
+  padding: 14px 20px;
+  font-weight: 600;
+  font-size: 16px;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(239, 91, 12, 0.3);
+}
+
+.connexion-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 91, 12, 0.4);
+  background: linear-gradient(135deg, #ff6b1a, var(--orange));
+}
+
+/* Séparateur */
+.connexion-divider {
+  position: relative;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.connexion-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.connexion-divider span {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0 20px;
+  color: #6b7280;
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Boutons sociaux */
+.connexion-btn-social {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.connexion-btn-social:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Texte d'inscription */
+.connexion-signup-text {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.connexion-signup-link {
+  color: var(--orange);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.connexion-signup-link:hover {
+  color: #d45502;
+  text-decoration: underline;
+}
+
+/* Note de sécurité */
+.connexion-security-note {
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  color: var(--blueMain);
+}
+
+.connexion-security-note i {
+  color: var(--orange);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .connexion-container {
+    max-width: 350px;
+    margin: 20px;
+  }
+
+  .connexion-card {
+    padding: 24px !important;
+  }
+
+  .connexion-title {
+    font-size: 24px;
+  }
+
+  .connexion-btn-social {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.connexion-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* ------------------------------------------- */
+/* Styles spécifiques au Dashboard pour la responsivité */
+/* ------------------------------------------- */
+
+/* Conteneur principal du tableau de bord */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc; /* Fond clair pour le contenu principal */
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px; /* Largeur fixe pour la sidebar sur desktop */
+  background-color: var(--blueMain);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out; /* Pour l'animation d'ouverture/fermeture mobile */
+  z-index: 1020; /* Au-dessus du contenu principal */
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.sidebar-header h4 {
+  color: white;
+  margin: 0;
+  font-weight: 700;
+}
+
+.btn-close-sidebar {
+  background: none;
+  border: none;
+  color: white;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.sidebar-content {
+  flex-grow: 1;
+}
+
+.sidebar-select.form-select {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+.sidebar-select.form-select option {
+  color: #333; /* Couleur du texte des options pour la lisibilité */
+  background-color: white;
+}
+.sidebar-select.form-select:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 0.25rem rgba(239, 91, 12, 0.25);
+}
+
+.btn-cta {
+  background-color: var(--orange);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.btn-cta:hover {
+  background-color: #d45502;
+  transform: translateY(-1px);
+}
+
+.sidebar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.7);
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  border-radius: 0.5rem;
+  margin-bottom: 5px;
+  transition: all 0.2s ease;
+}
+.sidebar-nav .nav-link:hover {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.sidebar-nav .nav-link.active {
+  color: white;
+  background-color: var(--orange);
+  font-weight: 600;
+}
+.sidebar-nav .nav-link.active svg {
+  color: white;
+}
+.sidebar-nav .nav-link svg {
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s ease;
+}
+
+.sidebar-footer {
+  margin-top: auto; /* Pousse le footer vers le bas */
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Contenu principal */
+.main-wrapper {
+  flex-grow: 1;
+  padding: 30px;
+  overflow-y: auto; /* Permet le défilement si le contenu est trop long */
+}
+
+.main-content {
+  max-width: 1200px; /* Limite la largeur du contenu sur les grands écrans */
+  margin: 0 auto;
+}
+
+.content-header {
+  margin-bottom: 30px;
+}
+
+.content-header h2 {
+  color: var(--blueMain);
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+/* Cards KPI */
+.kpi-card {
+  background-color: white;
+  border: 1px solid var(--gray);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-card .card-title {
+  color: var(--orange);
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.kpi-card .card-text {
+  color: var(--blueMain);
+  font-size: 1rem;
+}
+
+/* Document Card */
+.document-card {
+  border: 1px solid var(--gray);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+.document-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+.document-card svg {
+  color: var(--orange); /* Icônes de documents en orange */
+}
+
+/* Modals (ajustements pour mieux s'adapter) */
+.modal.fade.show {
+  display: block; /* Rendre la modal visible */
+  background-color: rgba(0, 0, 0, 0.5); /* Overlay semi-transparent */
+}
+
+.modal-dialog {
+  margin: 1.75rem auto; /* Centrage et marge par défaut de Bootstrap */
+}
+
+.modal-content {
+  border-radius: 0.75rem;
+  overflow: hidden; /* Pour que border-radius s'applique à l'intérieur */
+}
+
+/* Mobile Header (visible uniquement sur mobile) */
+.mobile-header {
+  background-color: var(--blueMain);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; /* Reste en haut lors du défilement */
+  top: 0;
+  width: 100%;
+  z-index: 1030; /* Au-dessus de la sidebar overlay */
+}
+
+.btn-menu {
+  background: none;
+  border: none;
+  color: white;
+  padding: 0;
+  font-size: 1.5rem;
+}
+
+/* Overlay pour la sidebar mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1010;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+.sidebar-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ------------------------------------------- */
+/* MEDIA QUERIES POUR LA RESPONSIVITÉ DU DASHBOARD */
+/* ------------------------------------------- */
+
+/* Pour les écrans plus petits que 992px (lg) - typiquement tablettes et mobiles */
+@media (max-width: 770px) {
+  .dashboard-container {
+    flex-direction: column; /* La sidebar et le contenu se stackent */
+  }
+
+  .sidebar {
+    position: fixed; /* Rendre la sidebar flottante */
+    top: 0;
+    left: 0;
+    height: 100%;
+    transform: translateX(-100%); /* Cacher la sidebar par défaut */
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .sidebar.show {
+    transform: translateX(0); /* Montrer la sidebar */
+  }
+
+  .main-wrapper {
+    padding: 20px; /* Réduire le padding général */
+    padding-top: 70px; /* Espace pour le header mobile */
+  }
+
+  .content-header {
+    margin-bottom: 20px;
+  }
+
+  .content-header h2 {
+    font-size: 1.8rem;
+  }
+
+  /* Adapter les tableaux pour les petits écrans */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Pour un défilement plus doux sur iOS */
+  }
+  .table {
+    white-space: nowrap; /* Empêche le texte de se casser dans le tableau */
+  }
+
+  /* KPi cards */
+  .kpi-card .card-title {
+    font-size: 2rem;
+  }
+}
+
+/* Pour les écrans plus petits que 768px (md) - typiquement smartphones */
+@media (max-width: 767.98px) {
+  .sidebar {
+    width: 250px; /* Légèrement plus étroite sur les très petits écrans */
+  }
+
+  .main-wrapper {
+    padding: 15px; /* Encore moins de padding */
+    padding-top: 65px; /* Ajuster le padding supérieur pour le header mobile */
+  }
+
+  .content-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .kpi-card .card-title {
+    font-size: 1.8rem;
+  }
+  .kpi-card .card-text {
+    font-size: 0.9rem;
+  }
+
+  /* Forcer les boutons d'action rapide à s'empiler si nécessaire */
+  .main-content .card .row > .col-lg-4.col-md-6.mb-2 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  /* Ajustements pour les boutons d'alerte */
+  .d-flex.flex-column.flex-sm-row {
+    align-items: flex-start !important; /* Empilement sur les très petits écrans */
+  }
+  .d-flex.flex-column.flex-sm-row .mb-2.mb-sm-0 {
+    margin-bottom: 0.5rem !important;
+  }
+  .d-flex.flex-column.flex-sm-row .d-flex {
+    width: 100%; /* Les boutons prennent toute la largeur */
+    justify-content: flex-end; /* Alignés à droite */
+  }
+  .d-flex.flex-column.flex-sm-row .d-flex .btn {
+    flex-grow: 1; /* Chaque bouton prend l'espace disponible */
+  }
+}
+
+/* Pour les écrans très petits (inférieurs à 400px) */
+@media (max-width: 399.98px) {
+  .mobile-header {
+    padding: 10px 15px;
+  }
+  .mobile-header h5 {
+    font-size: 1.1rem;
+  }
+  .btn-menu svg {
+    width: 20px;
+    height: 20px;
+  }
+  .sidebar {
+    width: 100%; /* La sidebar prend toute la largeur sur les très petits écrans */
+    max-width: 250px; /* Limite la largeur si elle est trop étirée */
+  }
+  .main-wrapper {
+    padding: 10px;
+    padding-top: 60px;
+  }
+  .content-header h2 {
+    font-size: 1.3rem;
+  }
+}
+
+.titleColor2 {
+  color: white;
+  margin-bottom: 50px;
+  margin-top: 40px;
+}
+
+/* Media query pour les mobiles (max-width: 767.98px) */
+@media (max-width: 767.98px) {
+  /* ... (Gardez toutes les autres règles existantes pour mobile ici) ... */
+
+  /* Section Mission - Assurer que l'image est au-dessus du texte */
+  /* Nous devons cibler le parent qui contient MissionImg et le texte .existense */
+  /* Supposons que ces deux éléments sont des colonnes ou sont directement dans une ligne flex */
+  .sectionColor1 .row {
+    /* Ou un autre conteneur parent direct si ce n'est pas la row */
+    display: flex;
+    flex-direction: column; /* Empile les éléments verticalement */
+    align-items: center; /* Centre les éléments horizontalement */
+  }
+
+  .MissionImg {
+    order: 1; /* L'image apparaît en premier (au-dessus) */
+    margin-top: 120px; /* Conserver la marge pour l'espace */
+    margin-right: 40px; /* Conserver la marge si elle est voulue */
+    /* Assurez-vous que l'image est centrée horizontalement si elle n'occupe pas toute la largeur */
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .existense {
+    order: 2; /* Le texte apparaît en second (en dessous) */
+    margin-top: 60px; /* Conserver la marge pour l'espace */
+  }
+
+  /* Section Vision - Assurer que l'image est en dessous du texte sur mobile */
+  /* Reconfigurer l'ordre existant pour la Vision sur mobile */
+  .sectionColor2 .row {
+    /* Ou un autre conteneur parent direct si ce n'est pas la row */
+    display: flex;
+    flex-direction: column; /* Empile les éléments verticalement */
+    align-items: center; /* Centre les éléments horizontalement */
+  }
+
+  .vision-text-container {
+    order: 1; /* Le texte apparaît en premier (au-dessus) */
+    padding: 0 15px; /* Ajuster le padding comme précédemment */
+    min-height: auto;
+  }
+
+  .vision-image-container {
+    order: 2; /* L'image apparaît en second (en dessous) */
+    margin-bottom: 12px; /* Conserver la marge si elle est voulue */
+    padding: 0 15px;
+  }
+
+  /* ... (Gardez toutes les autres règles existantes pour mobile ici) ... */
+}
+
+/* Media query pour les tablettes (y compris grandes tablettes comme iPad Pro, Surface Pro) */
+/* C'est la même que la précédente, mais j'ajoute les ordres pour Mission et Vision */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  /* Section Mission */
+  .sectionColor1 .row {
+    /* Appliquer Flexbox pour contrôler l'ordre */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sectionColor1 {
+    background-color: white;
+    overflow: hidden;
+    position: relative;
+    height: 500px;
+    /* border-radius: 20px; */
+  }
+
+  .MissionImg {
+    order: 1; /* Image au-dessus sur tablette */
+    margin-top: 30px;
+    margin-right: 0;
+    left: 0;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+    height: auto;
+  }
+  .existense {
+    order: 2; /* Texte en dessous sur tablette */
+    margin-top: 30px;
+    line-height: 3;
+    font-size: 1.5rem;
+    padding: 0 15px;
+  }
+
+  /* Section Vision */
+  .sectionColor2 .row {
+    /* Appliquer Flexbox pour contrôler l'ordre */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .vision-text-container {
+    order: 1; /* Texte au-dessus sur tablette */
+    padding: 0 15px;
+    min-height: auto;
+  }
+  .vision-image-container {
+    order: 2; /* Image en dessous sur tablette */
+    margin-right: 0;
+    margin-bottom: 30px;
+    padding: 0 15px;
+  }
+  .VisionImg {
+    height: 250px;
+    max-width: 100%;
+    margin-right: 0;
+    margin-bottom: 0;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .vision-content {
+    padding: 30px;
+  }
+  .vision-text {
+    font-size: 1.5rem;
+    line-height: 1.6;
+  }
+}
+
+/* Styles pour les écrans de bureau (>= 1200px) - Réinitialiser l'ordre si nécessaire */
+@media (min-width: 1200px) {
+  /* Section Mission - styles desktop */
+  .sectionColor1 .row {
+    display: flex; /* S'assurer que le flex reste actif si vous utilisez des col bootstrap */
+    flex-direction: row; /* Retour à l'ordre horizontal */
+    justify-content: space-between; /* Ou whatever vous aviez */
+    align-items: center; /* Alignement vertical */
+  }
+  .MissionImg {
+    order: initial; /* Réinitialiser l'ordre pour les desktop (image à gauche ou droite selon le HTML) */
+    margin-top: 80px;
+    left: 3px;
+    max-width: 100%;
+    height: 300px;
+  }
+  .existense {
+    order: initial; /* Réinitialiser l'ordre */
+    line-height: 3;
+    font-size: 1.8rem;
+    margin-top: 61px;
+    padding: initial;
+  }
+
+  /* Section Vision - styles desktop */
+  .sectionColor2 .row {
+    display: flex;
+    flex-direction: row; /* Retour à l'ordre horizontal */
+    align-items: center;
+  }
+  .vision-text-container {
+    order: initial; /* Réinitialise l'ordre (le texte est probablement à gauche) */
+    padding: 0 40px;
+    min-height: 300px;
+  }
+  .vision-image-container {
+    order: initial; /* Réinitialise l'ordre (l'image est probablement à droite) */
+    padding: 0 20px;
+  }
+  .VisionImg {
+    height: auto;
+    width: 100%;
+    margin: 0;
+  }
+  .vision-text {
+    font-size: 1.9rem;
+    line-height: 1.8;
+  }
+}
