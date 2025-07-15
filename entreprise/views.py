@@ -17,17 +17,45 @@ class DomaineViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 class SecteurActiviteViewSet(viewsets.ModelViewSet):
+
     queryset = SecteurActivite.objects.all()
     serializer_class = SecteurActiviteSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        nom = request.data.get('nom', '').strip()
+        description = request.data.get('description', '').strip() if 'description' in request.data else ''
+        if not nom:
+            return Response({"detail": "Le nom du secteur est obligatoire."}, status=status.HTTP_400_BAD_REQUEST)
+        if SecteurActivite.objects.filter(nom__iexact=nom).exists():
+            return Response({"detail": "Ce secteur existe déjà."}, status=status.HTTP_400_BAD_REQUEST)
+        # Si tout est OK, on crée normalement
+        secteur = SecteurActivite.objects.create(nom=nom, description=description)
+        serializer = SecteurActiviteSerializer(secteur)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 class EntrepriseViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
+
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return EntrepriseCreateUpdateSerializer
         return EntrepriseSerializer
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        # Récupère l'objet créé et renvoie la version détaillée
+        entreprise = Entreprise.objects.get(pk=response.data['id'])
+        serializer = EntrepriseSerializer(entreprise)
+        return Response(serializer.data, status=response.status_code)
+
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        # Récupère l'objet modifié et renvoie la version détaillée
+        entreprise = self.get_object()
+        serializer = EntrepriseSerializer(entreprise)
+        return Response(serializer.data, status=response.status_code)
 
     def get_queryset(self):
         # Filtre les entreprises appartenant à l'utilisateur connecté

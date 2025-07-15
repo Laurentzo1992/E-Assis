@@ -1295,7 +1295,6 @@ const Dashboard = () => {
           Suivi des notifications et résultats de candidatures
         </p>
       </div>
-
       {loadingActiveCompany ? (
         <p>Chargement des données de l'entreprise...</p>
       ) : errorActiveCompany ? (
@@ -1328,61 +1327,44 @@ const Dashboard = () => {
                 ) : alertesApi.length === 0 ? (
                   <p>Aucune alerte trouvée pour votre entreprise.</p>
                 ) : (
-                  alertesApi.map((alerte) => (
-                    <div
-                      key={alerte.id}
-                      className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center border-bottom py-2"
-                    >
-                      <div className="mb-2 mb-sm-0">
-                        <h6 className="mb-1">
-                          {alerte.type_alerte}: {alerte.contenu_alerte}
-                        </h6>
-                        <small className="text-muted">
-                          {new Date(alerte.date_alerte).toLocaleDateString(
-                            "fr-FR"
-                          )}{" "}
-                          - Canal: {alerte.canal_alerte}
-                        </small>
-                        {alerte.publication && (
-                          <small className="text-muted d-block mt-1">
-                            Publication: {alerte.publication.titre}
+                  [...alertesApi]
+                    .sort(
+                      (a, b) =>
+                        new Date(b.date_alerte) - new Date(a.date_alerte)
+                    )
+                    .slice(0, 5)
+                    .map((alerte) => (
+                      <div
+                        key={alerte.id}
+                        className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center border-bottom py-2"
+                      >
+                        <div className="mb-2 mb-sm-0">
+                          <h6 className="mb-1">
+                            {alerte.type_alerte}: {alerte.contenu_alerte}
+                          </h6>
+                          <small className="text-muted">
+                            {new Date(alerte.date_alerte).toLocaleDateString(
+                              "fr-FR"
+                            )}{" "}
+                            - Canal: {alerte.canal_alerte}
                           </small>
-                        )}
-                        {alerte.entreprise && (
-                          <small className="text-muted d-block">
-                            Entreprise: {alerte.entreprise.nom}
-                          </small>
-                        )}
+                          {alerte.publication && (
+                            <small className="text-muted d-block mt-1">
+                              Publication: {alerte.publication.titre}
+                            </small>
+                          )}
+                          {alerte.entreprise && (
+                            <small className="text-muted d-block">
+                              Entreprise: {alerte.entreprise.nom}
+                            </small>
+                          )}
+                        </div>
                       </div>
-                      <div className="d-flex">
-                        <button className="btn btn-sm btn-outline-success me-2">
-                          <svg
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
-                          >
-                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
-                          </svg>
-                        </button>
-                        <button className="btn btn-sm btn-outline-danger">
-                          <svg
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
-                          >
-                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    ))
                 )}
               </div>
             </div>
           </div>
-
           <div className="col-lg-4">
             <div className="card">
               <div className="card-header">
@@ -1401,53 +1383,60 @@ const Dashboard = () => {
                 ) : resultatsApi.length === 0 ? (
                   <p>Aucun résultat trouvé pour votre entreprise.</p>
                 ) : (
-                  resultatsApi.map((resultat) => (
-                    <div key={resultat.marche.id} className="mb-3">
-                      <div className="d-flex justify-content-between align-items-center mb-1">
-                        <span className="fw-bold">
-                          {resultat.marche.publication.titre}
-                        </span>
-                        <span
-                          className={`badge ${
-                            resultat.entreprise_attributaire &&
+                  [...resultatsApi]
+                    .sort(
+                      (a, b) =>
+                        new Date(b.date_attribution) -
+                        new Date(a.date_attribution)
+                    )
+                    .slice(0, 5)
+                    .map((resultat) => (
+                      <div key={resultat.marche.id} className="mb-3">
+                        <div className="d-flex justify-content-between align-items-center mb-1">
+                          <span className="fw-bold">
+                            {resultat.marche.publication.titre}
+                          </span>
+                          <span
+                            className={`badge ${
+                              resultat.entreprise_attributaire &&
+                              resultat.entreprise_attributaire.id ===
+                                activeCompany.id
+                                ? "bg-success"
+                                : "bg-danger"
+                            }`}
+                          >
+                            {resultat.entreprise_attributaire &&
                             resultat.entreprise_attributaire.id ===
                               activeCompany.id
-                              ? "bg-success"
-                              : "bg-danger"
-                          }`}
+                              ? "Retenu"
+                              : "Non retenu"}
+                          </span>
+                        </div>
+                        <small className="text-muted d-block">
+                          Résultat publié le{" "}
+                          {new Date(
+                            resultat.date_attribution
+                          ).toLocaleDateString("fr-FR")}
+                        </small>
+                        <small className="text-muted d-block">
+                          Attributaire:{" "}
+                          {resultat.entreprise_attributaire
+                            ? resultat.entreprise_attributaire.nom
+                            : "N/A"}
+                        </small>
+                        <small className="text-muted d-block">
+                          Montant attribué: {resultat.montant_attribue}
+                        </small>
+                        <a
+                          href={resultat.marche.publication.source}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="small"
                         >
-                          {resultat.entreprise_attributaire &&
-                          resultat.entreprise_attributaire.id ===
-                            activeCompany.id
-                            ? "Retenu"
-                            : "Non retenu"}
-                        </span>
+                          Voir l'annonce officielle
+                        </a>
                       </div>
-                      <small className="text-muted d-block">
-                        Résultat publié le{" "}
-                        {new Date(resultat.date_attribution).toLocaleDateString(
-                          "fr-FR"
-                        )}
-                      </small>
-                      <small className="text-muted d-block">
-                        Attributaire:{" "}
-                        {resultat.entreprise_attributaire
-                          ? resultat.entreprise_attributaire.nom
-                          : "N/A"}
-                      </small>
-                      <small className="text-muted d-block">
-                        Montant attribué: {resultat.montant_attribue}
-                      </small>
-                      <a
-                        href={resultat.marche.publication.source}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="small"
-                      >
-                        Voir l'annonce officielle
-                      </a>
-                    </div>
-                  ))
+                    ))
                 )}
               </div>
             </div>
