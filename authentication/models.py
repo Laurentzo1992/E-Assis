@@ -1,6 +1,8 @@
 # authentication/models.py
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
+import uuid
 # from entreprise.models import Entreprise # Cette ligne est commentée pour éviter l'importation circulaire
 
 class UtilisateurManager(BaseUserManager):
@@ -60,6 +62,8 @@ class Utilisateur(AbstractUser):
         related_name='active_users' # Nom inverse pour accéder aux utilisateurs actifs depuis une entreprise
     )
     is_email_verified = models.BooleanField(default=False) # Cette ligne DOIT être présente
+    activation_token = models.UUIDField(default=uuid.uuid4, editable=False)
+    activation_token_created_at = models.DateTimeField(default=timezone.now)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = [] # Aucun champ requis en plus de l'email et du mot de passe

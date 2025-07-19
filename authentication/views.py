@@ -21,51 +21,63 @@ from django.conf import settings
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from .models import Utilisateur
+from django.utils import timezone
+from rest_framework.decorators import api_view, permission_classes
 
 
 User = get_user_model()
 
-# La fonction send_verification_email est commentée et ne sera plus utilisée.
-# def send_verification_email(user, request):
-#     token = default_token_generator.make_token(user)
-#     uid = urlsafe_base64_encode(force_bytes(user.pk))
-    
-#     # Utilisez la bonne URL de votre front-end pour la vérification
-#     # Remplacez 'votre_domaine_frontend.com' par le domaine réel de votre application front-end
-#     # et ajustez le chemin si nécessaire.
-#     relative_link = reverse('email_verify', kwargs={'uidb64': uid, 'token': token})
-#     # Assurez-vous que settings.FRONTEND_DOMAIN ou settings.SITE_URL est défini
-#     # dans votre settings.py avec l'URL de base de votre frontend
-#     abs_url = f"{settings.FRONTEND_DOMAIN}{relative_link}" 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def activate_account(request, token):
+    print("=== [DEBUG] Tentative d'activation avec le token:", token)
 
-#     subject = 'Vérification de votre compte E-MARCHÉS'
-    
-#     # Utilisez les champs repnom et repprenom pour le nom de l'utilisateur
-#     context = {
-#         'user_name': f"{user.repprenom} {user.repnom}".strip(),
-#         'verification_link': abs_url,
-#     }
-#     html_message = render_to_string('emails/account_verification_email.html', context)
-#     plain_message = strip_tags(html_message)
+    try:
+        user = Utilisateur.objects.get(activation_token=token)
+        if user.is_active:
+            print("=== [DEBUG] Compte activé:", user.email)
+            return Response(
+                {"message": "Compte activé."},
+                status=status.HTTP_200_OK
+            )
 
-#     send_mail(
-#         subject,
-#         plain_message,
-#         settings.DEFAULT_FROM_EMAIL,
-#         [user.email],
-#         html_message=html_message,
-#         fail_silently=False,
-#     )
+        delta = timezone.now() - user.activation_token_created_at
+        print("=== [DEBUG] Temps écoulé (s):", delta.total_seconds())
+
+        if delta.total_seconds() > 15 * 60:
+            print("=== [DEBUG] Lien expiré.")
+            return Response(
+                {"error": "Le lien d'activation a expiré."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Activer le compte
+        user.is_active = True
+        user.is_email_verified = True
+        user.save()
+        print("=== [DEBUG] Compte activé pour:", user.email)
+
+        return Response(
+            {"message": "Compte activé avec succès."},
+            status=status.HTTP_200_OK
+        )
+
+    except Utilisateur.DoesNotExist:
+        print("=== [DEBUG] Token invalide.")
+        return Response(
+            {"error": "Lien invalide."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
-    
+
     @swagger_auto_schema(
         request_body=RegisterSerializer,
         responses={
-            201: openapi.Response('Utilisateur créé avec succès', examples={
-                "application/json": {"message": "Utilisateur créé avec succès"}
-            }),
+            201: openapi.Response('Utilisateur créé avec succès'),
             400: 'Erreurs de validation'
         },
         operation_description="Inscription d'un nouvel utilisateur"
@@ -74,15 +86,33 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            # send_verification_email(user, request) # L'envoi de l'email de vérification est désactivé
-            
-            # Si la vérification par email est désactivée, activez l'utilisateur et marquez l'email comme vérifié immédiatement
-            user.is_email_verified = True
-            user.is_active = True # Assurez-vous que l'utilisateur est actif après l'inscription
+            user.is_active = False  # L'utilisateur doit activer son compte
             user.save()
 
-            # Message de succès mis à jour pour refléter l'absence d'envoi d'email de vérification
-            return Response({"message": "Utilisateur créé avec succès. Vous pouvez maintenant vous connecter."}, status=status.HTTP_201_CREATED)
+            # Création du lien d’activation vers le frontend React
+            activation_link = f"{settings.FRONTEND_DOMAIN}/verification/{user.activation_token}"
+
+            # Email HTML
+            html_message = render_to_string('emails/activation_email.html', {
+                'user': user,
+                'activation_link': activation_link
+            })
+            text_message = strip_tags(html_message)
+
+            # Envoi de l'email
+            send_mail(
+                'Vérification de votre compte',
+                text_message,
+                settings.EMAIL_HOST_USER,
+                [user.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+
+            return Response(
+                {"message": "Utilisateur créé. Vérifiez votre email pour activer votre compte."},
+                status=status.HTTP_201_CREATED
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):

@@ -191,10 +191,7 @@ export default function InscriptionBootstrap() {
           alert("Une erreur inattendue est survenue lors de l'inscription.");
         }
       } else {
-        // Message de succès simplifié
-        alert("Inscription réussie ! Vous pouvez maintenant vous connecter.");
-        // Rediriger immédiatement vers la page de connexion
-        navigate("/connexion");
+        navigate("/email-verification-sent");
       }
     } catch (error) {
       console.error("Erreur réseau ou serveur:", error);
