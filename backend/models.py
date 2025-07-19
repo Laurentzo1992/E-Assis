@@ -1,4 +1,4 @@
-
+# backend/models.py
 from django.db import models
 from entreprise.models import Domaine, Entreprise
 

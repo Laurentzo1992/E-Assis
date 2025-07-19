@@ -47,6 +47,7 @@ class EntrepriseCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Entreprise
         fields = [
+            'id', # Ajout explicite de l'ID ici
             'nom', 'numero_identification', 'siret', 'adresse', 'telephone', 'email',
             'date_creation', 'description', 'repnom', 'repprenom', 'rccm',
             'domaine_ids', 'secteur_ids',
