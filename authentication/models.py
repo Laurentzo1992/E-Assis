@@ -62,8 +62,11 @@ class Utilisateur(AbstractUser):
         related_name='active_users' # Nom inverse pour accéder aux utilisateurs actifs depuis une entreprise
     )
     is_email_verified = models.BooleanField(default=False) # Cette ligne DOIT être présente
+    #Nouveaux champs pour la vérification et la récupération de compte
     activation_token = models.UUIDField(default=uuid.uuid4, editable=False)
     activation_token_created_at = models.DateTimeField(default=timezone.now)
+    reset_password_token = models.UUIDField(null=True, blank=True)
+    reset_password_token_created_at = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = [] # Aucun champ requis en plus de l'email et du mot de passe

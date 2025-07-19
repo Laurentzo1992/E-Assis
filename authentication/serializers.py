@@ -3,6 +3,8 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate # Importez la fonction authenticate
 from .models import Utilisateur # Importez votre modèle Utilisateur
+from django.utils import timezone
+import uuid
 
 class UtilisateurSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,4 +82,44 @@ class RegisterSerializer(serializers.ModelSerializer):
             repnom=validated_data.get('repnom', ''),
             repprenom=validated_data.get('repprenom', '')
         )
+        return user
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    repnom = serializers.CharField(max_length=255)
+    repprenom = serializers.CharField(max_length=255)
+
+    def validate(self, data):
+        email = data.get('email')
+        repnom = data.get('repnom')
+        repprenom = data.get('repprenom')
+        try:
+            user = Utilisateur.objects.get(email=email, repnom=repnom, repprenom=repprenom)
+        except Utilisateur.DoesNotExist:
+            raise serializers.ValidationError("Aucun utilisateur trouvé avec ces informations.")
+        data['user'] = user
+        return data
+
+    def save(self):
+        user = self.validated_data['user']
+        user.reset_password_token = uuid.uuid4()
+        user.reset_password_token_created_at = timezone.now()
+        user.save()
+        return user
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError("Les mots de passe ne correspondent pas.")
+        return data
+
+    def save(self, user):
+        user.set_password(self.validated_data['new_password'])
+        user.reset_password_token = None
+        user.reset_password_token_created_at = None
+        user.save()
         return user

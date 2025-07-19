@@ -1,7 +1,7 @@
 # authentication/urls.py
 from django.urls import path, include
 # Correction: Importez EmailVerifyView
-from .views import RegisterView, LoginView, ProfileView, GoogleLoginAPIView, EmailVerifyView, ChangePasswordView, ResetPasswordRequestView, ResetPasswordConfirmView, activate_account
+from .views import RegisterView, LoginView, ProfileView, GoogleLoginAPIView, EmailVerifyView, ChangePasswordView, ResetPasswordRequestView, ResetPasswordConfirmView, activate_account, RequestPasswordResetView, ResetPasswordView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -14,4 +14,6 @@ urlpatterns = [
     # RÉTABLI : Route pour la vérification d'email
     path('verify-email/<str:uidb64>/<str:token>/', EmailVerifyView.as_view(), name='email_verify'),
     path('activate/<uuid:token>/', activate_account, name='activate-account'),
+    path('request-reset-password/', RequestPasswordResetView.as_view(), name='request-reset-password'),
+    path('reset-password/<uuid:token>/', ResetPasswordView.as_view(), name='reset-password'),
 ]

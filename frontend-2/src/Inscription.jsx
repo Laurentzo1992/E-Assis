@@ -168,8 +168,8 @@ export default function InscriptionBootstrap() {
         },
         body: JSON.stringify({
           email: formData.email,
-          first_name: formData.prenomRepresentant, // Assurez-vous que le backend attend 'first_name'
-          last_name: formData.nomRepresentant, // Assurez-vous que le backend attend 'last_name'
+          repnom: formData.nomRepresentant,
+          repprenom: formData.prenomRepresentant,
           password: formData.password,
           password2: formData.password2,
         }),

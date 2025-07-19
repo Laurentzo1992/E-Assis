@@ -300,9 +300,10 @@ const Connexion = () => {
                     Se souvenir de moi
                   </label>
                 </div>
-                <a href="#" className="connexion-forgot-link">
+                {/* Lien vers la page de réinitiallisation de mot de passe */}
+                <Link to="/mot-de-passe-oublie" className="connexion-forgot-link">
                   Mot de passe oublié ?
-                </a>
+                </Link>
               </div>
 
               {/* Bouton de connexion */}
