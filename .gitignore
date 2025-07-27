@@ -1,0 +1,31 @@
+# --- Fichiers d'environnement ---
+*.env
+**/*.env
+
+# --- Node modules ---
+node_modules/
+**/node_modules/
+
+# --- Fichiers Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# --- Django : migrations ---
+**/migrations/
+!**/migrations/__init__.py   # On garde __init__.py pour que le dossier reste un package
+
+# --- Base de données SQLite ---
+db.sqlite3
+
+# --- Logs et fichiers temporaires ---
+*.log
+*.pot
+*.pyc
+.DS_Store
+Thumbs.db
+
+# --- Environnements virtuels ---
+venv/
+.env/
