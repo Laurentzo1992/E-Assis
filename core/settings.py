@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'veille_marches',
 ]
 
 AUTH_USER_MODEL = 'authentication.Utilisateur'
@@ -208,3 +209,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Domaine front
 FRONTEND_DOMAIN = config('FRONTEND_DOMAIN', default='http://localhost:3000')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
