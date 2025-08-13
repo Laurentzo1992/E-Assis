@@ -3,8 +3,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime
 import re
+from django.utils import timezone
 
-# ... (La fonction parse_french_date et le dictionnaire FRENCH_MONTHS ne changent pas) ...
 FRENCH_MONTHS = {
     'janvier': 1, 'février': 2, 'mars': 3, 'avril': 4, 'mai': 5, 'juin': 6,
     'juillet': 7, 'août': 8, 'septembre': 9, 'octobre': 10, 'novembre': 11, 'décembre': 12
@@ -64,8 +64,7 @@ def scrape_the_very_latest_publication():
             date_pub = parse_french_date(title)
             
             if date_pub is None:
-                print(f"Avertissement: Impossible d'extraire la date pour '{title}'.")
-                return None
+                date_pub=timezone.now()
             
             numero_revue = None
             match_num = re.search(r'n°\s*(\d+)', title, re.IGNORECASE)

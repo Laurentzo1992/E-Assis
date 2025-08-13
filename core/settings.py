@@ -16,6 +16,7 @@ ALLOWED_HOSTS = [
 
 # Applications installées
 INSTALLED_APPS = [
+"jazzmin",
     "unfold",
     "unfold.contrib.filters",
     "unfold.contrib.forms",
@@ -197,9 +198,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalisation
 LANGUAGE_CODE = 'fr-fr'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Ouagadougou'
 USE_I18N = True
 USE_TZ = True
+
 
 # Static
 STATIC_URL = 'static/'
@@ -212,3 +214,30 @@ FRONTEND_DOMAIN = config('FRONTEND_DOMAIN', default='http://localhost:3000')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# URL du broker (Redis) qui sert de file d'attente pour les messages des tâches.
+# Le '0' à la fin correspond à la base de données Redis par défaut (de 0 à 15).
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+
+# URL du backend qui stocke l'état et les résultats des tâches.
+# C'est optionnel mais fortement recommandé pour le suivi.
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+# Format de sérialisation des données échangées. 'json' est sécurisé et standard.
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# Fuseau horaire pour la planification des tâches.
+# Pour le Burkina Faso, le fuseau est 'Africa/Ouagadougou' (qui est équivalent à GMT/UTC).
+CELERY_TIMEZONE = 'Africa/Ouagadougou'
+
+
+import os
+from dotenv import load_dotenv
+
+# Charger les variables du fichier .env
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')

@@ -29,3 +29,6 @@ Thumbs.db
 # --- Environnements virtuels ---
 venv/
 .env/
+
+
+media/publications/
