@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import Publication
-from django.contrib import admin
-from .models import ( Publication, TypeProcedure, Marche, AppelOffre, Resultat, Lot )
+from .models import ( TypeProcedure, Marche, AppelOffre, Resultat, Lot, Notification )
 
 # Configuration pour le modèle Publication
 @admin.register(Publication)
@@ -81,3 +80,26 @@ class MarcheAdmin(admin.ModelAdmin):
         """Fonction pour afficher une version tronquée de l'objet dans la liste."""
         return (obj.objet[:75] + '...') if len(obj.objet) > 75 else obj.objet
     objet_court.short_description = 'Objet du Marché'
+
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = (
+        "id", "type_notification", "entreprise", "marche",
+        "domaine", "lot", "lu", "created_at"
+    )
+    list_filter = ("type_notification", "lu", "domaine", "marche")
+    search_fields = ("message", "entreprise__nom", "marche__objet", "domaine__libelle", "lot__id")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at", "updated_at")
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                "type_notification", "entreprise", "marche",
+                "domaine", "lot", "message", "lu"
+            )
+        }),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
+    )

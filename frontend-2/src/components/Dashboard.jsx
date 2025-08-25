@@ -3,6 +3,50 @@
 import React, { useState, useEffect } from "react";
 import { apiRequest, logout, setNavigateInstance } from "../services/auth";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
+
+// Style personnalisé pour React Select
+const customStyles = {
+  control: (base) => ({
+    ...base,
+    minHeight: "38px",
+    border: "1px solid #dee2e6",
+    "&:hover": {
+      borderColor: "#86b7fe",
+    },
+  }),
+  multiValue: (base) => ({
+    ...base,
+    backgroundColor: "#e9ecef",
+    borderRadius: "4px",
+  }),
+  multiValueLabel: (base) => ({
+    ...base,
+    color: "#495057",
+  }),
+  multiValueRemove: (base) => ({
+    ...base,
+    color: "#495057",
+    "&:hover": {
+      backgroundColor: "#dc3545",
+      color: "white",
+    },
+  }),
+  menu: (base) => ({
+    ...base,
+    // Force le menu à s'afficher au-dessus des autres éléments
+    zIndex: 9999,
+  }),
+};
+
+// Styles spécifiques pour le Select dans le modal
+const modalSelectStyles = {
+  ...customStyles,
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
 
 const Dashboard = () => {
   // --- États généraux du tableau de bord ---
@@ -101,6 +145,10 @@ const Dashboard = () => {
   const [loadingPasswordUpdate, setLoadingPasswordUpdate] = useState(false);
   const [errorPasswordUpdate, setErrorPasswordUpdate] = useState(null);
 
+  // Visibilité des champs mdp (profil > changer le mot de passe)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   // --- États pour le modal d'alerte personnalisé ---
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [alertModalMessage, setAlertModalMessage] = useState("");
@@ -1199,8 +1247,21 @@ const Dashboard = () => {
                   entreprise.
                 </p>
               ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover">
+                <div
+                  className="table-responsive"
+                  style={{
+                    height: "400px",
+                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    border: "1px solid #dee2e6",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <table
+                    className="table table-hover"
+                    style={{ marginBottom: "0px", background: "white" }}
+                  >
                     <thead>
                       <tr>
                         <th>Date de publication</th>
@@ -1211,7 +1272,7 @@ const Dashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredPublications.map((pub) => (
+                      {filteredPublications.slice(0, 20).map((pub) => (
                         <tr key={pub.id} style={{ cursor: "pointer" }}>
                           <td>
                             <div className="d-none d-md-block">
@@ -1244,42 +1305,6 @@ const Dashboard = () => {
                   </table>
                 </div>
               )}
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-header">
-              <h5 className="mb-0">Bibliothèque de documents</h5>
-            </div>
-            <div className="card-body">
-              <div className="mb-3">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Rechercher par mot-clé..."
-                />
-              </div>
-              <div className="row">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="col-lg-3 col-md-4 col-sm-6 mb-3">
-                    <div className="card document-card">
-                      <div className="card-body text-center">
-                        <svg
-                          width="48"
-                          height="48"
-                          fill="currentColor"
-                          className="text-danger mb-2"
-                          viewBox="0 0 16 16"
-                        >
-                          <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z" />
-                        </svg>
-                        <h6 className="card-title">Document {i}</h6>
-                        <small className="text-muted">PDF - 2.3 MB</small>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </>
@@ -1583,7 +1608,7 @@ const Dashboard = () => {
                       />
                     </div>
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Téléphone</label>
+                      <label className="form-label">Téléphone (WhAtsApp)</label>
                       <input
                         type="tel"
                         className="form-control"
@@ -1639,31 +1664,32 @@ const Dashboard = () => {
                         {errorDomaines.message}
                       </p>
                     ) : (
-                      <div className="row">
-                        {apiDomainesActivite.map((domaine) => (
-                          <div key={domaine.id} className="col-md-6 mb-2">
-                            <div className="form-check">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                id={`domaine-${domaine.id}`}
-                                checked={profileData.domainesActivite.some(
-                                  (d) => d.id === domaine.id
-                                )}
-                                onChange={() =>
-                                  handleProfileDomaineChange(domaine.id)
-                                }
-                              />
-                              <label
-                                className="form-check-label"
-                                htmlFor={`domaine-${domaine.id}`}
-                              >
-                                {domaine.libelle}
-                              </label>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <Select
+                        isMulti
+                        styles={customStyles}
+                        options={apiDomainesActivite.map((domaine) => ({
+                          value: domaine.id,
+                          label: domaine.libelle,
+                        }))}
+                        value={profileData.domainesActivite.map((domaine) => ({
+                          value: domaine.id,
+                          label: domaine.libelle,
+                        }))}
+                        onChange={(selectedOptions) => {
+                          const selectedIds = selectedOptions
+                            ? selectedOptions.map((opt) => opt.value)
+                            : [];
+                          setProfileData({
+                            ...profileData,
+                            domainesActivite: apiDomainesActivite.filter((d) =>
+                              selectedIds.includes(d.id)
+                            ),
+                          });
+                        }}
+                        placeholder="Sélectionnez un ou plusieurs domaines..."
+                        noOptionsMessage={() => "Aucun domaine disponible"}
+                        classNamePrefix="react-select"
+                      />
                     )}
                   </div>
 
@@ -1684,56 +1710,7 @@ const Dashboard = () => {
                 </form>
               </div>
             </div>
-
-            {/* Section Ajout de Secteur */}
-            <div className="card mb-4">
-              <div className="card-header">
-                <h5 className="mb-0">Ajouter un nouveau secteur</h5>
-              </div>
-              <div className="card-body">
-                <form onSubmit={handleAddSecteur}>
-                  <div className="mb-3">
-                    <label className="form-label">Nom du secteur</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={newSecteurNom}
-                      onChange={(e) => setNewSecteurNom(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-cta">
-                    Ajouter le secteur
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {/* Section Ajout de Domaine */}
-            <div className="card mb-4">
-              <div className="card-header">
-                <h5 className="mb-0">Ajouter un nouveau domaine</h5>
-              </div>
-              <div className="card-body">
-                <form onSubmit={handleAddDomaine}>
-                  <div className="mb-3">
-                    <label className="form-label">Libellé du domaine</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={newDomaineLibelle}
-                      onChange={(e) => setNewDomaineLibelle(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-cta">
-                    Ajouter le domaine
-                  </button>
-                </form>
-              </div>
-            </div>
           </div>
-
           <div className="col-lg-4">
             <div className="card">
               <div className="card-header">
@@ -1743,35 +1720,74 @@ const Dashboard = () => {
                 <form onSubmit={handleSubmitChangePassword}>
                   <div className="mb-3">
                     <label className="form-label">Mot de passe actuel</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      required
-                    />
+                    <div className="input-group">
+                      <input
+                        type={showCurrentPassword ? "text" : "password"}
+                        className="form-control"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowCurrentPassword((v) => !v)}
+                      >
+                        <i
+                          className={`bi ${
+                            showCurrentPassword ? "bi-eye-slash" : "bi-eye"
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Nouveau mot de passe</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                    />
+                    <div className="input-group">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        className="form-control"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowNewPassword((v) => !v)}
+                      >
+                        <i
+                          className={`bi ${
+                            showNewPassword ? "bi-eye-slash" : "bi-eye"
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
                       Confirmer le nouveau mot de passe
                     </label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      required
-                    />
+                    <div className="input-group">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="form-control"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setShowConfirmPassword((v) => !v)}
+                      >
+                        <i
+                          className={`bi ${
+                            showConfirmPassword ? "bi-eye-slash" : "bi-eye"
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
                   </div>
                   <button
                     type="submit"
@@ -1865,7 +1881,7 @@ const Dashboard = () => {
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Téléphone</label>
+                  <label className="form-label">Téléphone (WhAtsApp)</label>
                   <input
                     type="tel"
                     className="form-control"
@@ -1981,31 +1997,37 @@ const Dashboard = () => {
                     Erreur de chargement des domaines: {errorDomaines.message}
                   </p>
                 ) : (
-                  <div className="row">
-                    {apiDomainesActivite.map((domaine) => (
-                      <div key={domaine.id} className="col-md-6 mb-2">
-                        <div className="form-check">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id={`add-domaine-${domaine.id}`}
-                            checked={addEntrepriseData.domainesActivite.includes(
-                              domaine.id
-                            )}
-                            onChange={() =>
-                              handleAddEntrepriseDomaine(domaine.id)
-                            }
-                          />
-                          <label
-                            className="form-check-label"
-                            htmlFor={`add-domaine-${domaine.id}`}
-                          >
-                            {domaine.libelle}
-                          </label>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <Select
+                    isMulti
+                    styles={modalSelectStyles}
+                    options={apiDomainesActivite.map((domaine) => ({
+                      value: domaine.id,
+                      label: domaine.libelle,
+                    }))}
+                    value={addEntrepriseData.domainesActivite
+                      .map((id) => {
+                        const domaine = apiDomainesActivite.find(
+                          (d) => d.id === id
+                        );
+                        return domaine
+                          ? { value: id, label: domaine.libelle }
+                          : null;
+                      })
+                      .filter(Boolean)}
+                    onChange={(selectedOptions) => {
+                      setAddEntrepriseData({
+                        ...addEntrepriseData,
+                        domainesActivite: selectedOptions
+                          ? selectedOptions.map((opt) => opt.value)
+                          : [],
+                      });
+                    }}
+                    placeholder="Sélectionnez un ou plusieurs domaines..."
+                    noOptionsMessage={() => "Aucun domaine disponible"}
+                    classNamePrefix="react-select"
+                    menuPortalTarget={document.body}
+                    menuPosition="fixed"
+                  />
                 )}
               </div>
             </div>

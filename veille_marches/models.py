@@ -203,3 +203,30 @@ class Lot(models.Model):
 
     def __str__(self):
         return f"Lot {self.numero_lot or 'unique'} - {self.nom_entreprise_texte}"
+    
+
+#modèle pour les notifications
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('DOMAINE', 'Notification par domaine'),
+        ('ENTREPRISE_SPECIFIQUE', 'Notification entreprise spécifique'),
+    ]
+    
+    type_notification = models.CharField(max_length=25, choices=TYPE_CHOICES)
+    entreprise = models.ForeignKey('entreprise.Entreprise', on_delete=models.CASCADE, related_name="notifications", verbose_name=_("entreprise concernée"))
+    marche = models.ForeignKey('Marche', on_delete=models.CASCADE, null=True, blank=True)
+    domaine = models.ForeignKey('entreprise.Domaine', on_delete=models.CASCADE, related_name="notifications", verbose_name=_("domaine concerné"), null=True, blank=True)
+    lot = models.ForeignKey('Lot', on_delete=models.CASCADE, null=True, blank=True)
+    lu = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    message=models.TextField()
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        if self.type_notification == 'DOMAINE':
+            return f"Notification {self.entreprise.nom} - {self.domaine.libelle} - {self.marche.objet[:50]}"
+        else:
+            return f"Notification spécifique {self.entreprise.nom} - Lot {self.lot.id}"

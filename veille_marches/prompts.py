@@ -1,12 +1,19 @@
+from entreprise.models import Domaine
+
 def create_extraction_prompt(notice_text: str) -> str:
     """
     Génère le prompt détaillé pour Gemini, demandant des clés en snake_case
     pour correspondre directement aux modèles Django.
     """
+    #  Récupération de tous les domaines disponibles
+    domaines_disponibles = list(Domaine.objects.values_list('libelle', flat=True))
+    domaines_str = ", ".join([f'"{d}"' for d in domaines_disponibles])
+    
     json_schema = """
     {
       "estComplet": true,
       "type_procedure": "string",
+      "domaine_identifie": "string | null",
       "marche": {
         "ministere": "string | null",
         "region": "string | null",
@@ -53,6 +60,11 @@ def create_extraction_prompt(notice_text: str) -> str:
 
 **Phase 2 : Extraction des Données (si la notice est complète)**
 - Si la notice est complète, extrais les informations et retourne-les **exclusivement** sous la forme d'un objet JSON unique et valide.
+
+**IDENTIFICATION DU DOMAINE D'ACTIVITÉ :**
+- Analyse l'objet du marché et identifie le domaine d'activité correspondant parmi cette liste EXACTE : [{domaines_str}]
+- Le champ `domaine_identifie` doit contenir EXACTEMENT l'un des domaines de la liste ci-dessus, ou `null` si aucun ne correspond
+- Base ton choix sur l'objet du marché, les mots-clés techniques, et le type de prestations demandées
 
 **RÈGLES D'EXTRACTION STRICTES :**
 1.  **Format des Clés :** Toutes les clés du JSON doivent être en **snake_case** (ex: `type_procedure`, `nom_entreprise`).

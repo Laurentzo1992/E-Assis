@@ -4,20 +4,124 @@ import pdfplumber
 import re
 import json
 import time
-from .models import Publication, TypeProcedure, Marche, AppelOffre, Resultat, Lot
-from entreprise.models import Entreprise
+from .models import Publication, TypeProcedure, Marche, AppelOffre, Resultat, Lot, Notification
+from entreprise.models import Entreprise, Domaine
 from .utils import call_gemini_api
 from .prompts import create_extraction_prompt
 
 
-def _segmenter_document_en_notices(texte_complet: str) -> list[str]:
+def segmenter_document_en_notices(texte_complet: str) -> list[str]:
     if not texte_complet: return []
     pattern_debut = r'(?=\n(?:MINISTERE|AGENCE|ECOLE|CENTRE|COMMUNE|REGION|DIRECTION|PROGRAMME)\s+DE[S\sA-Z]+|\n(?:Résultats\s+provisoires|RESULTATS\s+PROVISOIRES|Demande\s+de\s+prix\s+N°|AVIS\sA\sMANIFESTATION\sD\'INTERET|Appel\s+d\'Offres\s+Ouvert|Base\s+de\s+données\s+complémentaires))'
     notices_candidates = re.split(pattern_debut, texte_complet)
     return [notice.strip() for notice in notices_candidates if notice and len(notice.strip()) > 200]
 
+def extraire_domaine_avec_ia(notice_text: str) -> str:
+    """
+    Utilise l'IA pour identifier le domaine d'activité d'une notice
+    en comparant avec les domaines disponibles dans la base de données.
+    """
+    try:
+        # Récupérer tous les domaines disponibles
+        domaines_disponibles = list(Domaine.objects.values_list('libelle', flat=True))
+        
+        if not domaines_disponibles:
+            return None
+            
+        # Créer un prompt spécifique pour l'identification des domaines
+        prompt_domaine = f"""
+Analysez cette notice de marché public et identifiez le domaine d'activité correspondant.
+
+DOMAINES DISPONIBLES:
+{', '.join(domaines_disponibles)}
+
+INSTRUCTIONS:
+- Retournez UNIQUEMENT le nom exact du domaine qui correspond le mieux à cette notice
+- Si aucun domaine ne correspond, retournez "AUCUN"
+- Réponse au format JSON strict: {{"domaine": "nom_du_domaine"}}
+
+NOTICE À ANALYSER:
+{notice_text[:2000]}  # Limiter à 2000 caractères pour éviter les prompts trop longs
+"""
+        
+        reponse_str = call_gemini_api(prompt_domaine)
+        if not reponse_str:
+            return None
+            
+        # Extraire le JSON de la réponse
+        json_match = re.search(r'\{.*\}', reponse_str, re.DOTALL)
+        if not json_match:
+            return None
+            
+        donnees = json.loads(json_match.group(0))
+        domaine_identifie = donnees.get('domaine')
+        
+        # Vérifier que le domaine existe dans la base
+        if domaine_identifie and domaine_identifie != "AUCUN":
+            try:
+                domaine_obj = Domaine.objects.get(libelle__iexact=domaine_identifie)
+                return domaine_obj
+            except Domaine.DoesNotExist:
+                pass
+                
+        return None
+        
+    except Exception as e:
+        print(f"Erreur lors de l'extraction du domaine: {e}")
+        return None
+
+def generer_notifications_marche(marche: Marche, domaine: Domaine = None):
+    """
+    Génère les notifications pour un marché donné.
+    - Notifications par domaine pour toutes les entreprises du domaine
+    - Notifications spécifiques pour les entreprises mentionnées dans les lots
+    """
+    notifications_creees = 0
+    
+    try:
+        # 1. Notifications par domaine
+        if domaine:
+            entreprises_domaine = Entreprise.objects.filter(domaines=domaine)
+            for entreprise in entreprises_domaine:
+                # Éviter les doublons avec get_or_create
+                notification, created = Notification.objects.get_or_create(
+                    type_notification='DOMAINE',
+                    entreprise=entreprise,
+                    marche=marche,
+                    domaine=domaine,
+                    defaults={
+                        'lu': False,
+                        'message': f"Nouveau marché dans votre domaine '{domaine.libelle}': {marche.objet}"
+                    }
+                )
+                if created:
+                    notifications_creees += 1
+        
+        # 2. Notifications spécifiques pour les entreprises mentionnées dans les lots
+        lots_avec_entreprises = Lot.objects.filter(marche=marche, entreprise_concernee__isnull=False)
+        for lot in lots_avec_entreprises:
+            notification, created = Notification.objects.get_or_create(
+                type_notification='ENTREPRISE_SPECIFIQUE',
+                entreprise=lot.entreprise_concernee,
+                marche=marche,
+                lot=lot,
+                defaults={
+                    'lu': False,
+                    'message': f"Votre entreprise est mentionnée dans le lot {lot.numero_lot}: {lot.description}"
+                }
+            )
+            if created:
+                notifications_creees += 1
+                
+        print(f"Notifications créées pour le marché {marche.id}: {notifications_creees}")
+        return notifications_creees
+        
+    except Exception as e:
+        print(f"Erreur lors de la génération des notifications: {e}")
+        return 0
+
 @transaction.atomic
-def _sauvegarder_donnees_notice(data: dict, publication: Publication):
+def sauvegarder_donnees_notice(data: dict, publication: Publication):
     """
     Sauvegarde les données d'une notice. Tente de lier les lots à des entreprises
     existantes mais n'en crée aucune.
@@ -28,6 +132,14 @@ def _sauvegarder_donnees_notice(data: dict, publication: Publication):
     type_proc, _ = TypeProcedure.objects.get_or_create(libelle=type_proc_libelle)
     marche_data = data.get('marche', {})
     marche = Marche.objects.create(publication=publication, type_procedure=type_proc, **marche_data)
+    
+    domaine_identifie = None
+    if marche.objet:  # Si on a un objet de marché
+        domaine_identifie = extraire_domaine_avec_ia(marche.objet)
+        if domaine_identifie:
+            marche.domaine = domaine_identifie
+            marche.save()
+    
     if data.get('appel_offre'): AppelOffre.objects.create(marche=marche, **data['appel_offre'])
     if data.get('resultat'):
         champs_resultat = {k: v for k, v in data['resultat'].items() if k in ['date_attribution', 'reference_decision', 'nombre_offres_recues', 'delai_execution']}
@@ -65,7 +177,9 @@ def _sauvegarder_donnees_notice(data: dict, publication: Publication):
             statut=lot_info.get('statut', 'AUTRE').upper().replace(" ", "_"),
             rang=lot_info.get('rang'),
             motif=lot_info.get('motif')
-        )   
+        )
+    
+    generer_notifications_marche(marche, domaine_identifie)
 
 @shared_task(bind=True)
 def process_publication_pipeline(self, publication_id: int):
@@ -90,7 +204,7 @@ def process_publication_pipeline(self, publication_id: int):
         if not texte_complet.strip():
             raise ValueError("Le contenu extrait du PDF est vide.")
 
-        notices_candidates = _segmenter_document_en_notices(texte_complet)
+        notices_candidates = segmenter_document_en_notices(texte_complet)
         
         i = 0
         while i < len(notices_candidates):
@@ -115,7 +229,7 @@ def process_publication_pipeline(self, publication_id: int):
                 donnees = json.loads(json_match.group(0))
 
                 if donnees.get("estComplet") is True:
-                    _sauvegarder_donnees_notice(donnees, publication)
+                    sauvegarder_donnees_notice(donnees, publication)
                     i += 1
                 elif donnees.get("estComplet") is False:
                     if i + 1 < len(notices_candidates):
@@ -140,4 +254,4 @@ def process_publication_pipeline(self, publication_id: int):
             publication.save()
         except Publication.DoesNotExist:
             pass
-        raise e 
+        raise e
