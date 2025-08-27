@@ -1,0 +1,66 @@
+tasks:
+  - name: extract_structure
+    agent: StructureAgent
+    description: >
+      Extraire la structure du document et les numéros de pages des sections à partir de la première page du PDF.
+    expected_output: >
+      Un dictionnaire mappant les noms de sections à leurs plages de pages.
+    inputs:
+      - page_text
+    outputs:
+      - section_map
+
+  - name: extract_results
+    agent: ResultExtractor
+    description: >
+      Extraire les attributions de marchés et les entreprises gagnantes de la section résultats.
+    expected_output: >
+      Une liste de dictionnaires contenant les détails de chaque marché attribué.
+    inputs:
+      - section_text
+    outputs:
+      - results_data
+
+  - name: extract_tenders
+    agent: TenderExtractor
+    description: >
+      Extraire les informations sur les appels d'offres ouverts.
+    expected_output: >
+      Une liste de dictionnaires contenant les détails de chaque appel d'offre ouvert.
+    inputs:
+      - section_text
+    outputs:
+      - tenders_data
+
+  - name: extract_entities
+    agent: EntityExtractor
+    description: >
+      Extraire les entités structurées (entreprises, contrats, domaines, lots).
+    expected_output: >
+      Un dictionnaire avec les clés pour chaque type d'entité.
+    inputs:
+      - section_text
+    outputs:
+      - entities
+
+  - name: tag_data
+    agent: Tagger
+    description: >
+      Assigner des tags et catégories à chaque entité extraite.
+    expected_output: >
+      Les entités en entrée, enrichies de tags ou catégories.
+    inputs:
+      - entities
+    outputs:
+      - tagged_entities
+
+  - name: trigger_alerts
+    agent: AlertAgent
+    description: >
+      Déclencher des alertes pour les entreprises selon leurs intérêts.
+    expected_output: >
+      Une liste d'alertes, chacune contenant l'entreprise, l'opportunité ou le résultat correspondant, et le message d'alerte.
+    inputs:
+      - tagged_entities
+    outputs:
+      - alerts
