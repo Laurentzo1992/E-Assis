@@ -1324,104 +1324,187 @@ const Dashboard = () => {
       ) : notifications.length === 0 ? (
         <p>Aucune notification trouvée pour votre entreprise.</p>
       ) : (
-        <div className="row">
-          {[...notifications]
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 20) // ✅ seulement 20 plus récentes
-            .map((notif) => (
-              <div key={notif.id} className="col-12 mb-2">
-                <div className="card shadow-sm">
-                  <div className="card-body p-2">
-                    <div className="d-flex justify-content-between align-items-start">
-                      {/* Zone texte */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div className="mb-1">
-                          <span
-                            className={`badge ${
-                              notif.type_notification === "DOMAINE"
-                                ? "bg-primary"
-                                : notif.type_notification === "ENTREPRISE"
-                                ? "bg-info"
-                                : notif.type_notification === "RESULTAT"
-                                ? "bg-success"
-                                : "bg-secondary"
-                            }`}
-                            style={{ fontSize: "0.75rem" }}
+        <>
+          {/* 💻 Version desktop avec scroll */}
+          <div
+            className="d-none d-md-block"
+            style={{
+              maxHeight: "660px",
+              overflowY: "auto",
+              overflowX: "hidden",
+              paddingRight: "5px",
+            }}
+          >
+            <div className="row">
+              {[...notifications]
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 20)
+                .map((notif) => (
+                  <div key={notif.id} className="col-12 mb-2">
+                    <div className="card shadow-sm">
+                      <div className="card-body p-2">
+                        {/* contenu identique */}
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="mb-1">
+                              <span
+                                className={`badge ${
+                                  notif.type_notification === "DOMAINE"
+                                    ? "bg-primary"
+                                    : notif.type_notification === "ENTREPRISE"
+                                    ? "bg-info"
+                                    : notif.type_notification === "RESULTAT"
+                                    ? "bg-success"
+                                    : "bg-secondary"
+                                }`}
+                                style={{ fontSize: "0.75rem" }}
+                              >
+                                {notif.type_notification
+                                  ? notif.type_notification
+                                      .toLowerCase()
+                                      .replace(/^[a-z]/, (s) => s.toUpperCase())
+                                  : "Info"}
+                              </span>
+                            </div>
+                            <div
+                              className="fw-semibold"
+                              style={{
+                                fontSize: "0.9rem",
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                                overflowWrap: "break-word",
+                              }}
+                            >
+                              {notif.entreprise_nom}
+                            </div>
+                            <div
+                              className="text-muted"
+                              style={{ fontSize: "0.8rem" }}
+                            >
+                              {notif.domaine_libelle}
+                            </div>
+                            <p
+                              className="fw-bold mb-1"
+                              style={{ fontSize: "0.9rem" }}
+                            >
+                              {notif.marche_objet}
+                            </p>
+                            {notif.lot_description && (
+                              <p
+                                className="mb-0 text-muted"
+                                style={{ fontSize: "0.8rem" }}
+                              >
+                                {notif.lot_description}
+                              </p>
+                            )}
+                          </div>
+                          <div
+                            className="text-end ms-3"
+                            style={{
+                              whiteSpace: "nowrap",
+                              fontSize: "0.75rem",
+                            }}
                           >
-                            {notif.type_notification
-                              ? notif.type_notification
-                                  .toLowerCase()
-                                  .replace(/^[a-z]/, (s) => s.toUpperCase())
-                              : "Info"}
-                          </span>
+                            <small className="text-muted">
+                              {new Date(notif.created_at).toLocaleString(
+                                "fr-FR"
+                              )}
+                            </small>
+                          </div>
                         </div>
-
-                        <div
-                          className="fw-semibold"
-                          style={{
-                            fontSize: "0.9rem",
-                            whiteSpace: "normal",
-                            wordBreak: "break-word",
-                            overflowWrap: "break-word",
-                          }}
-                        >
-                          {notif.entreprise_nom ||
-                            (notif.entreprise && notif.entreprise.nom) ||
-                            ""}
-                        </div>
-
-                        <div
-                          className="text-muted"
-                          style={{ fontSize: "0.8rem" }}
-                        >
-                          {notif.domaine_libelle ||
-                            (notif.domaine && notif.domaine.libelle) ||
-                            ""}
-                        </div>
-
-                        {/* Objet du marché */}
-                        <p
-                          className="fw-bold mb-1"
-                          style={{
-                            fontSize: "0.9rem",
-                            whiteSpace: "normal",
-                            wordBreak: "break-word",
-                            overflowWrap: "break-word",
-                          }}
-                        >
-                          {notif.marche_objet ||
-                            (notif.message && notif.message.trim().length > 0
-                              ? notif.message
-                              : "")}
-                        </p>
-
-                        {notif.lot_description && (
-                          <p
-                            className="mb-0 text-muted"
-                            style={{ fontSize: "0.8rem" }}
-                          >
-                            {notif.lot_description}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Date */}
-                      <div
-                        className="text-end ms-3"
-                        style={{ whiteSpace: "nowrap", fontSize: "0.75rem" }}
-                      >
-                        <small className="text-muted">
-                          {notif.created_at
-                            ? new Date(notif.created_at).toLocaleString("fr-FR")
-                            : ""}
-                        </small>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-        </div>
+                ))}
+            </div>
+          </div>
+
+          {/* 📱 Version mobile sans scroll */}
+          <div className="d-block d-md-none">
+            <div className="row">
+              {[...notifications]
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 20)
+                .map((notif) => (
+                  <div key={notif.id} className="col-12 mb-2">
+                    <div className="card shadow-sm">
+                      <div className="card-body p-2">
+                        {/* contenu identique */}
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="mb-1">
+                              <span
+                                className={`badge ${
+                                  notif.type_notification === "DOMAINE"
+                                    ? "bg-primary"
+                                    : notif.type_notification === "ENTREPRISE"
+                                    ? "bg-info"
+                                    : notif.type_notification === "RESULTAT"
+                                    ? "bg-success"
+                                    : "bg-secondary"
+                                }`}
+                                style={{ fontSize: "0.75rem" }}
+                              >
+                                {notif.type_notification
+                                  ? notif.type_notification
+                                      .toLowerCase()
+                                      .replace(/^[a-z]/, (s) => s.toUpperCase())
+                                  : "Info"}
+                              </span>
+                            </div>
+                            <div
+                              className="fw-semibold"
+                              style={{
+                                fontSize: "0.9rem",
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                                overflowWrap: "break-word",
+                              }}
+                            >
+                              {notif.entreprise_nom}
+                            </div>
+                            <div
+                              className="text-muted"
+                              style={{ fontSize: "0.8rem" }}
+                            >
+                              {notif.domaine_libelle}
+                            </div>
+                            <p
+                              className="fw-bold mb-1"
+                              style={{ fontSize: "0.9rem" }}
+                            >
+                              {notif.marche_objet}
+                            </p>
+                            {notif.lot_description && (
+                              <p
+                                className="mb-0 text-muted"
+                                style={{ fontSize: "0.8rem" }}
+                              >
+                                {notif.lot_description}
+                              </p>
+                            )}
+                          </div>
+                          <div
+                            className="text-end ms-3"
+                            style={{
+                              whiteSpace: "nowrap",
+                              fontSize: "0.75rem",
+                            }}
+                          >
+                            <small className="text-muted">
+                              {new Date(notif.created_at).toLocaleString(
+                                "fr-FR"
+                              )}
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
