@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Publication
-from .models import ( TypeProcedure, Marche, AppelOffre, Resultat, Lot, Notification )
+from backend.models import ( TypeProcedure, Marche, AppelOffre, Resultat, Lot, Notification, Publication )
 
 # Configuration pour le modèle Publication
 @admin.register(Publication)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Notification
+from backend.models import Notification
 
 class NotificationSerializer(serializers.ModelSerializer):
     entreprise_nom = serializers.CharField(source='entreprise.nom', read_only=True)
