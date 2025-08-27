@@ -4,7 +4,7 @@ import pdfplumber
 import re
 import json
 import time
-from .models import Publication, TypeProcedure, Marche, AppelOffre, Resultat, Lot, Notification
+from backend.models import Publication, TypeProcedure, Marche, AppelOffre, Resultat, Lot, Notification
 from entreprise.models import Entreprise, Domaine
 from .utils import call_gemini_api
 from .prompts import create_extraction_prompt

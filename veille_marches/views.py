@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.core.files.base import ContentFile
-from .models import Publication
+from backend.models import Publication
 from .scraping import scrape_the_very_latest_publication
 from .decorators import superuser_required
 from .tasks import process_publication_pipeline 
@@ -83,7 +83,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count
-from .models import Notification
+from backend.models import Notification
 from .serializers import NotificationSerializer, NotificationListSerializer, NotificationUpdateSerializer
 
 class NotificationViewSet(viewsets.ModelViewSet):
