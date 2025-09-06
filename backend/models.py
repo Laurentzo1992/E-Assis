@@ -172,7 +172,7 @@ class Lot(models.Model):
     )
     entreprise_concernee = models.ForeignKey(
         Entreprise,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="participations_lots",
         verbose_name=_("entreprise concernée"),
         null=True,
