@@ -73,7 +73,7 @@ class NotificationSerializer(serializers.ModelSerializer):
                     'description_lot': lot_concerne.description,
                 }
         return None
-
+        
 class UtilisateurSerializer(serializers.ModelSerializer):
     entreprise = EntrepriseSerializer(read_only=True)
     class Meta:

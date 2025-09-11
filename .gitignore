@@ -13,8 +13,6 @@ __pycache__/
 *.pyd
 
 # --- Django : migrations ---
-**/migrations/
-!**/migrations/__init__.py   # On garde __init__.py pour que le dossier reste un package
 
 # --- Base de données SQLite ---
 db.sqlite3
