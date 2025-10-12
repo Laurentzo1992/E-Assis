@@ -1,0 +1,32 @@
+# --- Fichiers d'environnement ---
+*.env
+**/*.env
+
+# --- Node modules ---
+node_modules/
+**/node_modules/
+
+# --- Fichiers Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# --- Django : migrations ---
+
+# --- Base de données SQLite ---
+db.sqlite3
+
+# --- Logs et fichiers temporaires ---
+*.log
+*.pot
+*.pyc
+.DS_Store
+Thumbs.db
+
+# --- Environnements virtuels ---
+venv/
+.env/
+
+
+media/publications/

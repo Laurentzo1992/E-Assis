@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panneau de Contrôle - Veille Marchés Publics</title>
+    
+    <!-- Intégration de Bootstrap (CSS & Icônes) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Styles personnalisés pour correspondre à votre thème -->
+    <style>
+        :root {
+            --color-dark-blue: #0f3c5b;
+            --color-orange: #e8772e;
+            --color-light-gray: #f8f9fa;
+        }
+
+        body {
+            background-color: var(--color-light-gray);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* --- Section Héro --- */
+        .hero-section {
+            background: linear-gradient(120deg, var(--color-dark-blue) 55%, var(--color-orange) 100%);
+            color: white;
+            padding: 4rem 2rem;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .hero-section h1 {
+            font-weight: 700;
+        }
+
+        .hero-section p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+
+        /* --- Bouton d'action personnalisé --- */
+        .btn-custom-orange {
+            background-color: var(--color-orange);
+            border-color: var(--color-orange);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-custom-orange:hover {
+            background-color: white;
+            border-color: white;
+            color: var(--color-orange);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* --- Style des cartes pour le contenu --- */
+        .content-card {
+            border: none;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+            border-radius: 0.5rem;
+        }
+
+        .card-header-icon {
+            font-size: 1.5rem;
+            color: #adb5bd;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Section d'action principale (Hero Section) -->
+    <div class="hero-section">
+        <div class="container">
+            <h1 class="display-5">Panneau de Contrôle</h1>
+            <p class="lead">Mise à jour des publications des marchés publics</p>
+            
+            <!-- Formulaire avec le bouton d'action -->
+            <form action="{% url 'scraping_control' %}" method="post" class="mt-4">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-custom-orange btn-lg shadow">
+                    <i class="bi bi-cloud-check-fill me-2"></i> Vérifier la dernière revue
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contenu principal de la page -->
+    <main class="container">
+        
+        <!-- Zone d'affichage des messages -->
+        {% if messages %}
+            <div class="messages mb-4">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Carte affichant l'historique des publications -->
+        <div class="card content-card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0">Dernières Publications Téléchargées</h5>
+                <i class="bi bi-clock-history card-header-icon"></i>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_publications %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4 py-3" scope="col">Numéro</th>
+                                    <th class="py-3" scope="col">Date de Publication</th>
+                                    <th class="py-3" scope="col">Statut</th>
+                                    <th class="pe-4 py-3" scope="col">Fichier</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pub in recent_publications %}
+                                <tr>
+                                    <td class="ps-4"><strong>{{ pub.numero_revue|default:"N/A" }}</strong></td>
+                                    <td>{{ pub.date_publication|date:"d M Y" }}</td>
+                                    <td>
+                                        <span class="badge rounded-pill
+                                            {% if pub.status == 'COMPLETED' %}bg-success-subtle text-success-emphasis
+                                            {% elif pub.status == 'DOWNLOADED' %}bg-primary-subtle text-primary-emphasis
+                                            {% elif pub.status == 'PROCESSING' %}bg-warning-subtle text-warning-emphasis
+                                            {% elif pub.status == 'ERROR' %}bg-danger-subtle text-danger-emphasis
+                                            {% else %}bg-secondary-subtle text-secondary-emphasis{% endif %}">
+                                            {{ pub.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="pe-4">
+                                        {% if pub.fichier_pdf %}
+                                            <a href="{{ pub.fichier_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                Voir le PDF
+                                            </a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted p-4">Aucune publication n'a encore été téléchargée.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <footer class="text-center text-muted mt-5 mb-4">
+            <p>© {% now "Y" %} - Application de Veille Marchés Publics</p>
+        </footer>
+
+    </main>
+
+    <!-- Script JS de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
