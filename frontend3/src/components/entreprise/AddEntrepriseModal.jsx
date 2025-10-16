@@ -38,7 +38,6 @@ const AddEntrepriseModal = ({
   });
   const [loading, setLoading] = useState(false);
 
-  // Ferme le modal au clic sur ESC
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === "Escape") onClose();
@@ -64,10 +63,6 @@ const AddEntrepriseModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Workaround pour récupérer les valeurs actuelles du DOM (utile si le navigateur
-    // a rempli les champs via autofill ou si l'utilisateur a collé du texte sans
-    // déclencher un event React). On lit d'abord les éléments du formulaire puis
-    // on tombe sur l'état React si l'élément est introuvable.
     const formEl = e.target;
     const currentValues = {
       nom: formEl.elements["nom"] ? formEl.elements["nom"].value : formData.nom,
@@ -98,7 +93,6 @@ const AddEntrepriseModal = ({
       domaineIds: formData.domaineIds,
     };
 
-    // Met à jour l'état React pour rester synchronisé avec le DOM
     setFormData((prev) => ({ ...prev, ...currentValues }));
 
     const payload = {
@@ -126,7 +120,6 @@ const AddEntrepriseModal = ({
           .join("\n");
         throw new Error(errorMessages);
       }
-
       const newCompany = await response.json();
       onSuccess(newCompany);
     } catch (error) {
@@ -140,44 +133,72 @@ const AddEntrepriseModal = ({
     label: d.libelle,
   }));
 
+  // Responsive styles
+  const modalOverlayStyle = {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+    padding: "10px",
+  };
+
+  const modalBoxStyle = {
+    backgroundColor: "#fff",
+    borderRadius: "10px",
+    width: "100%",
+    maxWidth: "700px",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    padding: "20px",
+    position: "relative",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+  };
+
+  const formGroupStyle = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "15px",
+    marginTop: "10px",
+  };
+
+  const inputContainerStyle = {
+    flex: "1 1 100%",
+  };
+
+  // 👇 Légèrement plus d’espace entre label et input
+  const inputStyle = {
+    width: "100%",
+    padding: "10px",
+    marginTop: "8px", // ← augmenté (avant 5px)
+    border: "1px solid #ccc",
+    borderRadius: "5px",
+    fontSize: "15px",
+  };
+
+  const desktopMedia = "@media (min-width: 768px)";
+  modalBoxStyle[desktopMedia] = { padding: "30px" };
+  inputContainerStyle[desktopMedia] = { flex: "1 1 45%" };
+
   const modalContent = (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-      }}
-      onClick={onClose} // fermeture au clic sur l'overlay
-    >
-      <div
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: "8px",
-          width: "90%",
-          maxWidth: "700px",
-          maxHeight: "90%",
-          overflowY: "auto",
-          padding: "20px",
-          position: "relative",
-        }}
-        onClick={(e) => e.stopPropagation()} // empêche la fermeture au clic à l'intérieur
-      >
-        <h2 style={{ marginBottom: "15px" }}>Créer votre entreprise</h2>
-        <p style={{ color: "#666" }}>
+    <div style={modalOverlayStyle} onClick={onClose}>
+      <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ marginBottom: "10px", textAlign: "center" }}>
+          Créer votre entreprise
+        </h2>
+        <p style={{ color: "#666", textAlign: "center", fontSize: "14px" }}>
           Renseignez les informations de votre entreprise pour commencer. Les
           champs marqués d'un * sont obligatoires.
         </p>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 45%" }}>
+          <div style={formGroupStyle}>
+            <div style={inputContainerStyle}>
               <label>Nom de l'entreprise *</label>
               <input
                 autoComplete="organization"
@@ -186,10 +207,10 @@ const AddEntrepriseModal = ({
                 value={formData.nom}
                 onChange={handleChange}
                 required
-                style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+                style={inputStyle}
               />
             </div>
-            <div style={{ flex: "1 1 45%" }}>
+            <div style={inputContainerStyle}>
               <label>Numéro d'identification *</label>
               <input
                 autoComplete="off"
@@ -198,20 +219,13 @@ const AddEntrepriseModal = ({
                 value={formData.numeroIdentification}
                 onChange={handleChange}
                 required
-                style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+                style={inputStyle}
               />
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              flexWrap: "wrap",
-              marginTop: "10px",
-            }}
-          >
-            <div style={{ flex: "1 1 45%" }}>
+          <div style={formGroupStyle}>
+            <div style={inputContainerStyle}>
               <label>SIRET *</label>
               <input
                 autoComplete="off"
@@ -220,10 +234,10 @@ const AddEntrepriseModal = ({
                 value={formData.siret}
                 onChange={handleChange}
                 required
-                style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+                style={inputStyle}
               />
             </div>
-            <div style={{ flex: "1 1 45%" }}>
+            <div style={inputContainerStyle}>
               <label>Téléphone</label>
               <input
                 autoComplete="tel"
@@ -231,12 +245,12 @@ const AddEntrepriseModal = ({
                 name="telephone"
                 value={formData.telephone}
                 onChange={handleChange}
-                style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+                style={inputStyle}
               />
             </div>
           </div>
 
-          <div style={{ marginTop: "10px" }}>
+          <div style={{ marginTop: "15px" }}>
             <label>Secteur d'activité *</label>
             <select
               name="secteurId"
@@ -244,7 +258,7 @@ const AddEntrepriseModal = ({
               onChange={handleChange}
               required
               disabled={loadingSecteurs}
-              style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+              style={inputStyle}
             >
               <option value="" disabled>
                 Sélectionner un secteur
@@ -257,8 +271,8 @@ const AddEntrepriseModal = ({
             </select>
           </div>
 
-          <div style={{ marginTop: "10px" }}>
-            <label>Domaines d'activité *</label>
+          <div style={{ marginTop: "15px" }}>
+            <label style={{ marginBottom: "7px" }}>Domaines d'activité *</label>
             <Select
               isMulti
               options={domaineOptions}
@@ -276,7 +290,6 @@ const AddEntrepriseModal = ({
           </div>
 
           <div style={{ display: "none" }} aria-hidden>
-            {/* Champs cachés pour aider l'autofill et la lecture DOM si nécessaire */}
             <input
               name="nomRepresentant"
               value={formData.nomRepresentant}
@@ -295,7 +308,8 @@ const AddEntrepriseModal = ({
               display: "flex",
               justifyContent: "flex-end",
               gap: "10px",
-              marginTop: "20px",
+              marginTop: "25px",
+              flexWrap: "wrap",
             }}
           >
             <Button

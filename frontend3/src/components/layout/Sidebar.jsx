@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { apiRequest } from "../../services/api";
+import { FileText, Bell, User, LogOut, PlusCircle } from "lucide-react";
 
 /**
  * @file Sidebar.jsx
@@ -18,21 +19,13 @@ const Sidebar = ({
   onLogout,
   showCustomAlert,
 }) => {
-  // Ajout d'un état de chargement local pour le sélecteur
   const [isChangingCompany, setIsChangingCompany] = useState(false);
 
-  /**
-   * Gère le changement d'entreprise active via le sélecteur.
-   * Cette fonction est maintenant entièrement contenue dans la Sidebar.
-   * @param {React.ChangeEvent<HTMLSelectElement>} e - L'événement de changement du sélecteur.
-   */
   const handleCompanyChange = async (e) => {
     const selectedId = parseInt(e.target.value);
-    if (!selectedId || selectedId === activeCompany?.id) {
-      return; // Ne rien faire si la même entreprise est re-sélectionnée
-    }
+    if (!selectedId || selectedId === activeCompany?.id) return;
 
-    setIsChangingCompany(true); // Début du chargement
+    setIsChangingCompany(true);
     try {
       const response = await apiRequest("entreprise/entreprises/set-active/", {
         method: "POST",
@@ -45,14 +38,10 @@ const Sidebar = ({
       }
 
       const updatedActiveCompany = await response.json();
-
-      // --- POINT CLÉ ---
-      // On appelle la fonction `setActiveCompany` passée en prop par DashboardPage.
-      // C'est ce qui met à jour l'état au niveau supérieur et déclenche le re-rendu global.
       setActiveCompany(updatedActiveCompany);
 
       showCustomAlert("Entreprise active changée avec succès !", "success");
-      setSidebarOpen(false); // Ferme la sidebar sur mobile après le changement
+      setSidebarOpen(false);
     } catch (error) {
       console.error("Erreur lors du changement d'entreprise active:", error);
       showCustomAlert(
@@ -60,27 +49,32 @@ const Sidebar = ({
         "danger"
       );
     } finally {
-      setIsChangingCompany(false); // Fin du chargement
+      setIsChangingCompany(false);
     }
   };
 
   return (
     <>
+      {/* Overlay */}
       <div
         className={`sidebar-overlay ${sidebarOpen ? "show" : ""}`}
         onClick={() => setSidebarOpen(false)}
       ></div>
 
+      {/* Sidebar */}
       <div className={`sidebar ${sidebarOpen ? "show" : ""}`}>
-        <div className="sidebar-header">
+        <div className="sidebar-header d-flex justify-content-between align-items-center">
           <h4>VeilleMarches Pro</h4>
           <button
             className="btn-close-sidebar d-md-none"
             onClick={() => setSidebarOpen(false)}
-          ></button>
+          >
+            ✕
+          </button>
         </div>
 
         <div className="sidebar-content">
+          {/* Sélecteur d'entreprise */}
           <div className="mb-3 text-center">
             {userCompanies.length > 0 ? (
               <>
@@ -89,7 +83,7 @@ const Sidebar = ({
                   className="form-select mb-2"
                   value={activeCompany ? activeCompany.id : ""}
                   onChange={handleCompanyChange}
-                  disabled={isChangingCompany} // Désactive le sélecteur pendant le chargement
+                  disabled={isChangingCompany}
                 >
                   <option value="">Sélectionner une entreprise</option>
                   {userCompanies.map((company) => (
@@ -112,29 +106,23 @@ const Sidebar = ({
             )}
           </div>
 
+          {/* Bouton Ajouter une entreprise */}
           <button
-            className="btn btn-cta w-100 mb-4"
-            onClick={onAddCompanyClick}
+            className="btn btn-cta w-100 mb-4 d-flex align-items-center justify-content-center gap-2"
+            onClick={() => {
+              setSidebarOpen(false); // ferme la sidebar
+              onAddCompanyClick(); // ouvre le modal
+            }}
           >
-            {/* ... SVG icône plus ... */} Ajouter une entreprise
+            <PlusCircle size={18} />
+            Ajouter une entreprise
           </button>
 
+          {/* Navigation */}
           <nav className="sidebar-nav">
             <a
               href="#"
-              className={`nav-link text-center ${
-                activeSection === "alertes" ? "active" : ""
-              }`}
-              onClick={() => {
-                setActiveSection("alertes");
-                setSidebarOpen(false);
-              }}
-            >
-              {/* ... SVG icône cloche ... */} Alertes & Résultats
-            </a>
-            <a
-              href="#"
-              className={`nav-link text-center ${
+              className={`nav-link d-flex align-items-center justify-content-center gap-2 ${
                 activeSection === "veille" ? "active" : ""
               }`}
               onClick={() => {
@@ -142,11 +130,27 @@ const Sidebar = ({
                 setSidebarOpen(false);
               }}
             >
-              {/* ... SVG icône document ... */} Publications officielles
+              <FileText size={18} />
+              Veille & Documents
             </a>
+
             <a
               href="#"
-              className={`nav-link text-center ${
+              className={`nav-link d-flex align-items-center justify-content-center gap-2 ${
+                activeSection === "alertes" ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveSection("alertes");
+                setSidebarOpen(false);
+              }}
+            >
+              <Bell size={18} />
+              Alertes & Résultats
+            </a>
+
+            <a
+              href="#"
+              className={`nav-link d-flex align-items-center justify-content-center gap-2 ${
                 activeSection === "profil" ? "active" : ""
               }`}
               onClick={() => {
@@ -154,14 +158,20 @@ const Sidebar = ({
                 setSidebarOpen(false);
               }}
             >
-              {/* ... SVG icône profil ... */} Profil
+              <User size={18} />
+              Profil
             </a>
           </nav>
         </div>
 
-        <div className="sidebar-footer">
-          <button className="btn btn-outline-light w-100" onClick={onLogout}>
-            {/* ... SVG icône déconnexion ... */} Déconnexion
+        {/* Footer */}
+        <div className="sidebar-footer mt-auto">
+          <button
+            className="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2"
+            onClick={onLogout}
+          >
+            <LogOut size={18} />
+            Déconnexion
           </button>
         </div>
       </div>
