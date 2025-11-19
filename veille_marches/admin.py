@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Publication
-from .models import ( TypeProcedure, Marche, AppelOffre, Resultat, Lot, Notification )
+from backend.models import ( TypeProcedure, Marche, AppelOffre, Resultat, Lot, Notification, Publication, Lot )
 
 # Configuration pour le modèle Publication
 @admin.register(Publication)
@@ -103,3 +102,7 @@ class NotificationAdmin(admin.ModelAdmin):
         }),
         ("Dates", {"fields": ("created_at", "updated_at")}),
     )
+
+
+
+admin.site.register(Lot)

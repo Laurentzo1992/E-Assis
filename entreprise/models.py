@@ -30,7 +30,7 @@ class Entreprise(models.Model):
     domaines = models.ManyToManyField(Domaine, through='EntrepriseDomaine')
     secteurs = models.ManyToManyField(SecteurActivite, through='EntrepriseSecteur')
     rccm = models.CharField(max_length=15, blank=True, null=True)
-    owner = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='owned_entreprises') # Ajout du propriétaire
+    owner = models.ForeignKey('authentication.Utilisateur', on_delete=models.CASCADE, related_name='owned_entreprises', null=True) # Ajout du propriétaire
 
     def __str__(self):
         return self.nom
