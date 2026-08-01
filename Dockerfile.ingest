@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# torch CPU uniquement : le GPU local est deja reserve par le conteneur vision-ocr, et le volume
+# d'embeddings ici (quelques centaines de chunks par bulletin) ne le justifie pas.
+RUN pip install --no-cache-dir torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+ENTRYPOINT ["python", "-m"]

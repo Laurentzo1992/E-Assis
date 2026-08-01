@@ -1,0 +1,12 @@
+transformers==4.46.3
+tokenizers==0.20.3
+einops==0.8.2
+addict==2.4.0
+easydict==1.13
+accelerate==1.14.0
+pillow==11.3.0
+fastapi==0.121.3
+uvicorn==0.40.0
+python-multipart==0.0.32
+httpx==0.28.1
+pytest==8.3.4

@@ -1,0 +1,95 @@
+services:
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z
+    container_name: kbbot-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: kbbot-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - backend
+
+  vision-ocr:
+    image: kbbot-vision-ocr:local
+    pull_policy: build
+    build:
+      context: vision-ocr
+      dockerfile: Dockerfile
+    container_name: kbbot-vision-ocr
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    # necessite un GPU NVIDIA (DeepSeek-OCR) : demarrage explicite uniquement.
+    #   docker compose --profile gpu up -d vision-ocr
+    profiles:
+      - gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    volumes:
+      # cache des poids du modele (~6.7 Go) : evite de re-telecharger a chaque redemarrage
+      - vision_ocr_model_cache:/root/.cache/huggingface
+    networks:
+      - backend
+
+  ingest:
+    image: kbbot-ingest:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile.ingest
+    container_name: kbbot-ingest
+    depends_on:
+      - qdrant
+      - minio
+    env_file:
+      - .env
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      VISION_OCR_URL: http://vision-ocr:8000
+      MINIO_ENDPOINT: minio:9000
+    volumes:
+      - .:/app
+      - ingest_model_cache:/root/.cache
+    networks:
+      - backend
+    # outil en ligne de commande, pas un service de fond : docker compose run --rm ingest ...
+    profiles:
+      - tools
+
+networks:
+  backend:
+
+volumes:
+  minio_data:
+  qdrant_data:
+  vision_ocr_model_cache:
+  ingest_model_cache:

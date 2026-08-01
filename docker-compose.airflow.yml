@@ -1,0 +1,125 @@
+x-airflow-common: &airflow-common
+  image: kbbot-airflow:local
+  pull_policy: build
+  build:
+    context: .
+    dockerfile: infrastructure/airflow/Dockerfile
+  environment: &airflow-common-env
+    PYTHONPATH: /opt/airflow
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-db/${AIRFLOW_DB_NAME}
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+    # Hostname du reseau Docker "backend" (different de la valeur .env, pensee pour un usage hote)
+    MINIO_ENDPOINT: minio:9000
+    MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+    MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    MINIO_BUCKET: ${MINIO_BUCKET}
+    DGCMEF_TAXONOMY_URL: ${DGCMEF_TAXONOMY_URL}
+    SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+  volumes: &airflow-common-volumes
+    - ./dags:/opt/airflow/dags
+    - ./ingestion:/opt/airflow/ingestion
+    - airflow_logs:/opt/airflow/logs
+  networks:
+    - backend
+  depends_on:
+    airflow-db:
+      condition: service_healthy
+
+services:
+  airflow-db:
+    image: postgres:16-alpine
+    container_name: kbbot-airflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AIRFLOW_DB_USER:?AIRFLOW_DB_USER is required}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:?AIRFLOW_DB_PASSWORD is required}
+      POSTGRES_DB: ${AIRFLOW_DB_NAME:?AIRFLOW_DB_NAME is required}
+    volumes:
+      - airflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: kbbot-airflow-init
+    restart: "no"
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - >
+        airflow db migrate &&
+        (airflow users list | grep -q "${AIRFLOW_ADMIN_USER}" ||
+        airflow users create
+        --username "${AIRFLOW_ADMIN_USER}"
+        --password "${AIRFLOW_ADMIN_PASSWORD}"
+        --firstname Admin
+        --lastname User
+        --role Admin
+        --email "${AIRFLOW_ADMIN_EMAIL}")
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: kbbot-airflow-webserver
+    restart: unless-stopped
+    command: webserver
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: kbbot-airflow-scheduler
+    restart: unless-stopped
+    command: scheduler
+    # user root : necessaire pour lire/ecrire /var/run/docker.sock (l'utilisateur airflow par
+    # defaut, uid 50000, n'a pas les droits dessus). Tradeoff connu du docker-outside-of-docker :
+    # ce conteneur peut alors piloter TOUS les conteneurs de l'hote. Acceptable en dev local
+    # uniquement - a remplacer par un socket-proxy avant tout deploiement partage.
+    user: "0:0"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./ingestion:/opt/airflow/ingestion
+      - airflow_logs:/opt/airflow/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname \"$$HOSTNAME\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
+networks:
+  # Reseau cree par docker-compose.yml (qdrant/minio/vision-ocr) : ce fichier s'y rattache plutot
+  # que d'en creer un second, pour que le DockerOperator (network_mode=kbbot_backend) puisse
+  # joindre qdrant/minio/vision-ocr par leur nom de service. Demarrer docker-compose.yml en
+  # premier (le reseau doit deja exister).
+  backend:
+    external: true
+    name: kbbot_backend
+
+volumes:
+  airflow_db_data:
+  airflow_logs:
