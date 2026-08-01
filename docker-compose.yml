@@ -60,6 +60,49 @@ services:
     networks:
       - backend
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: kbbot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # Backend FastAPI "entreprises" (auth + module Entreprise + marches publics) - integre depuis
+  # le projet E-Assis (Django/DRF d'origine remplace par FastAPI, meme contrat d'API pour
+  # frontend-2 qui reste dans E-Assis et pointe vers ce service via son port hote 8000).
+  api:
+    image: kbbot-api:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: kbbot-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
   ingest:
     image: kbbot-ingest:local
     pull_policy: build
@@ -91,5 +134,6 @@ networks:
 volumes:
   minio_data:
   qdrant_data:
+  postgres_data:
   vision_ocr_model_cache:
   ingest_model_cache:

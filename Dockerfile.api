@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY api/requirements.txt ./api/requirements.txt
+RUN pip install --no-cache-dir -r api/requirements.txt
+
+COPY api/ ./api/
+COPY templates/ ./templates/
+
+ENV PYTHONPATH=/app
+
+# alembic upgrade au demarrage du conteneur (pas au build) : la base Postgres n'existe/n'est
+# joignable qu'a l'execution (docker-compose depends_on: service_healthy garantit l'ordre).
+CMD ["sh", "-c", "alembic -c api/alembic.ini upgrade head && uvicorn api.main:app --host 0.0.0.0 --port 8000"]

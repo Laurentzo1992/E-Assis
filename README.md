@@ -16,6 +16,10 @@ Burkina Faso, PDF texte natif avec pages scannees ponctuelles).
   chunking -> embeddings -> upsert Qdrant).
 - **Airflow** (`docker-compose.airflow.yml`, `dags/`) : automatise quotidiennement la decouverte
   de nouveaux bulletins et leur indexation.
+- **Postgres + FastAPI** (`api/`) : backend "entreprises" (auth JWT, module Entreprise, marches
+  publics) - integre depuis le projet E-Assis (Django/DRF d'origine remplace par FastAPI, meme
+  contrat d'API que le frontend React `frontend-2` qui reste dans E-Assis et pointe vers ce
+  service via `http://localhost:8000`).
 
 ## Demarrage
 
@@ -57,6 +61,28 @@ Verifie en conditions reelles le 2026-08-01 : cycle complet (decouverte -> MinIO
 chunks) execute avec succes via le scheduler Airflow, y compris le court-circuit quand rien de
 nouveau n'est publie et le declenchement reel du conteneur Docker de vectorisation.
 
+## Backend entreprises (api/)
+
+```bash
+docker compose up -d postgres
+docker compose up -d --build api
+# Une seule fois, pour charger les donnees existantes (utilisateurs, entreprises, marches) :
+docker compose exec api python -m api.scripts.migrate_sqlite_to_postgres  # attend db.sqlite3 a la racine
+
+# UI interactive : http://localhost:8000/docs
+```
+
+Reproduit exactement les routes/formats de reponse du backend Django d'origine (auth
+register/activation/login/refresh JWT/Google OAuth/reset mot de passe, CRUD `/api/entreprise/*`
+scope par proprietaire, CRUD `/api/backend/api/*` pour les marches publics) - voir les docstrings
+de `api/routers/`. Mots de passe migres depuis Django (PBKDF2) verifies sans reinitialisation
+(`api/security.py`, `passlib` avec le hasher `django_pbkdf2_sha256`).
+
+**A savoir** : les identifiants SMTP Gmail fournis (`EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD`) ne
+sont pas valides pour l'authentification SMTP (`535 BadCredentials` constate en reel) - il faut
+un mot de passe d'application Gmail, pas le mot de passe du compte. Le code d'envoi est verifie
+fonctionnel (teste avec MailHog).
+
 ## Rechercher
 
 ```bash
@@ -91,9 +117,17 @@ pas la recherche elle-meme, seulement la metadonnee `section_title` de citation.
 | `MINIO_BUCKET` | `kbbot` | Bucket d'archivage des PDF |
 | `DGCMEF_TAXONOMY_URL` | page taxonomie DGCMEF | Page source du scraping |
 | `AIRFLOW_*` | - (requis) | Voir `.env.example` - DB, admin, fernet/secret key Airflow |
+| `POSTGRES_USER` / `PASSWORD` / `DB` | - (requis) | Base du backend `api/` |
+| `JWT_SECRET_KEY` | - (requis) | Signature des tokens JWT (`api/security.py`) |
+| `FRONTEND_DOMAIN` | `http://localhost:3000` | Base des liens d'activation/reset envoyes par email |
+| `EMAIL_HOST_USER` / `PASSWORD` | - (requis) | SMTP - mot de passe d'application pour Gmail |
+| `GOOGLE_CLIENT_ID` / `SECRET` | - (requis pour Google OAuth) | Connexion via compte Google |
 
 ## Tests
 
 ```bash
 python -m pytest tests/
 ```
+
+Les tests de `api/` (`test_auth_flow.py`, `test_entreprise.py`) tournent contre une vraie base
+Postgres (`docker compose up -d postgres`, puis `DATABASE_URL` pointant dessus) - pas de mock DB.

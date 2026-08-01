@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 .env
 .pytest_cache/
+.venv/
+db.sqlite3
