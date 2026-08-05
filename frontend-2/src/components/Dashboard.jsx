@@ -25,13 +25,13 @@ const Dashboard = () => {
   const [addEntrepriseData, setAddEntrepriseData] = useState({
     nom: "",
     numeroIdentification: "",
-    siret: "",
+    rccm: "",
     telephone: "",
     email: "",
     nomRepresentant: "", // Mappé à repnom côté backend
     prenomRepresentant: "", // Mappé à repprenom côté backend
     domainesActivite: [], // Stockera les IDs des domaines sélectionnés
-    secteurActivite: null, // Stockera l'ID du secteur sélectionné (sera envoyé comme tableau d'IDs)
+    secteursActivite: [], // Stockera les IDs des secteurs sélectionnés (multiple)
     adresse: "",
   });
 
@@ -39,13 +39,13 @@ const Dashboard = () => {
   const [profileData, setProfileData] = useState({
     nom: "",
     numeroIdentification: "",
-    siret: "",
+    rccm: "",
     adresse: "",
     email: "",
     telephone: "",
     nomRepresentant: "", // Mappé à repnom côté backend
     prenomRepresentant: "", // Mappé à repprenom côté backend
-    secteurActivite: null, // Stockera l'objet secteur ou null
+    secteursActivite: [], // Stockera un tableau d'objets secteur (multiple)
     domainesActivite: [], // Stockera un tableau d'objets domaine
   });
   const [loadingProfileUpdate, setLoadingProfileUpdate] = useState(false);
@@ -63,6 +63,12 @@ const Dashboard = () => {
   // --- États pour l'ajout de nouveaux secteurs/domaines via le profil ---
   const [newSecteurNom, setNewSecteurNom] = useState("");
   const [newDomaineLibelle, setNewDomaineLibelle] = useState("");
+
+  // --- États pour l'ajout d'un domaine par saisie libre, directement dans les formulaires
+  // entreprise (en plus des cases a cocher) - distincts de newDomaineLibelle ci-dessus qui
+  // alimente la carte de gestion globale des domaines, plus bas dans la page Profil.
+  const [newDomaineInputAdd, setNewDomaineInputAdd] = useState("");
+  const [newDomaineInputProfile, setNewDomaineInputProfile] = useState("");
 
   // --- États pour les données des sections (Accueil, Veille, Alertes) ---
   const [publications, setPublications] = useState([]);
@@ -218,17 +224,14 @@ const Dashboard = () => {
           setProfileData({
             nom: data.nom || "",
             numeroIdentification: data.numero_identification || "",
-            siret: data.siret || "",
+            rccm: data.rccm || "",
             adresse: data.adresse || "",
             email: data.email || "",
             telephone: data.telephone || "",
             nomRepresentant: data.repnom || "", // Mappé de 'repnom'
             prenomRepresentant: data.repprenom || "", // Mappé de 'repprenom'
-            // Mappe 'secteurs' (tableau d'objets) à 'secteurActivite' (un seul objet ou null)
-            secteurActivite:
-              data.secteurs && data.secteurs.length > 0
-                ? data.secteurs[0]
-                : null,
+            // Mappe 'secteurs' (tableau d'objets) à 'secteursActivite' (plusieurs possibles)
+            secteursActivite: data.secteurs || [],
             // Mappe 'domaines' (tableau d'objets) à 'domainesActivite'
             domainesActivite: data.domaines || [],
           });
@@ -263,6 +266,48 @@ const Dashboard = () => {
     });
   };
 
+  const handleAddEntrepriseSecteur = (secteurId) => {
+    const isSelected = addEntrepriseData.secteursActivite.includes(secteurId);
+    const newSecteurs = isSelected
+      ? addEntrepriseData.secteursActivite.filter((id) => id !== secteurId)
+      : [...addEntrepriseData.secteursActivite, secteurId];
+    setAddEntrepriseData({
+      ...addEntrepriseData,
+      secteursActivite: newSecteurs,
+    });
+  };
+
+  // Ajoute un domaine par saisie libre (en plus des cases a cocher) directement dans le
+  // formulaire de creation d'entreprise, et le selectionne immediatement.
+  const handleAddEntrepriseNewDomaine = async (e) => {
+    e.preventDefault();
+    const libelle = newDomaineInputAdd.trim();
+    if (!libelle) return;
+    try {
+      const response = await apiRequest(
+        "http://127.0.0.1:8000/api/entreprise/domaines/",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ libelle }),
+        }
+      );
+      if (!response.ok) throw new Error(`Erreur: ${response.status}`);
+      const domaine = await response.json();
+      setApiDomainesActivite((prev) =>
+        prev.some((d) => d.id === domaine.id) ? prev : [...prev, domaine]
+      );
+      setAddEntrepriseData((prev) =>
+        prev.domainesActivite.includes(domaine.id)
+          ? prev
+          : { ...prev, domainesActivite: [...prev.domainesActivite, domaine.id] }
+      );
+      setNewDomaineInputAdd("");
+    } catch (error) {
+      showCustomAlert(`Échec de l'ajout du domaine : ${error.message}`, "danger");
+    }
+  };
+
   const handleProfileDomaineChange = (domaineId) => {
     const isSelected = profileData.domainesActivite.some(
       (d) => d.id === domaineId
@@ -279,11 +324,51 @@ const Dashboard = () => {
     setProfileData({ ...profileData, domainesActivite: updatedDomaines });
   };
 
-  const handleProfileSecteurChange = (e) => {
-    const selectedId = e.target.value ? parseInt(e.target.value) : null;
-    const newSecteur =
-      apiSecteursActivite.find((s) => s.id === selectedId) || null;
-    setProfileData({ ...profileData, secteurActivite: newSecteur });
+  const handleProfileSecteurToggle = (secteurId) => {
+    const isSelected = profileData.secteursActivite.some(
+      (s) => s.id === secteurId
+    );
+    let updatedSecteurs;
+    if (isSelected) {
+      updatedSecteurs = profileData.secteursActivite.filter(
+        (s) => s.id !== secteurId
+      );
+    } else {
+      const secteurToAdd = apiSecteursActivite.find((s) => s.id === secteurId);
+      updatedSecteurs = [...profileData.secteursActivite, secteurToAdd];
+    }
+    setProfileData({ ...profileData, secteursActivite: updatedSecteurs });
+  };
+
+  // Ajoute un domaine par saisie libre (en plus des cases a cocher) directement dans le
+  // formulaire de profil, et le selectionne immediatement.
+  const handleProfileNewDomaine = async (e) => {
+    e.preventDefault();
+    const libelle = newDomaineInputProfile.trim();
+    if (!libelle) return;
+    try {
+      const response = await apiRequest(
+        "http://127.0.0.1:8000/api/entreprise/domaines/",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ libelle }),
+        }
+      );
+      if (!response.ok) throw new Error(`Erreur: ${response.status}`);
+      const domaine = await response.json();
+      setApiDomainesActivite((prev) =>
+        prev.some((d) => d.id === domaine.id) ? prev : [...prev, domaine]
+      );
+      setProfileData((prev) =>
+        prev.domainesActivite.some((d) => d.id === domaine.id)
+          ? prev
+          : { ...prev, domainesActivite: [...prev.domainesActivite, domaine] }
+      );
+      setNewDomaineInputProfile("");
+    } catch (error) {
+      showCustomAlert(`Échec de l'ajout du domaine : ${error.message}`, "danger");
+    }
   };
 
   // --- Fonctions de soumission des formulaires ---
@@ -298,15 +383,13 @@ const Dashboard = () => {
           body: JSON.stringify({
             nom: addEntrepriseData.nom,
             numero_identification: addEntrepriseData.numeroIdentification,
-            siret: addEntrepriseData.siret,
+            rccm: addEntrepriseData.rccm,
             telephone: addEntrepriseData.telephone,
             email: addEntrepriseData.email,
             repnom: addEntrepriseData.nomRepresentant,
             repprenom: addEntrepriseData.prenomRepresentant,
             domaine_ids: addEntrepriseData.domainesActivite,
-            secteur_ids: addEntrepriseData.secteurActivite
-              ? [addEntrepriseData.secteurActivite]
-              : [],
+            secteur_ids: addEntrepriseData.secteursActivite,
             adresse: addEntrepriseData.adresse,
           }),
         }
@@ -345,16 +428,13 @@ const Dashboard = () => {
       setProfileData({
         nom: newCompany.nom || "",
         numeroIdentification: newCompany.numero_identification || "",
-        siret: newCompany.siret || "",
+        rccm: newCompany.rccm || "",
         adresse: newCompany.adresse || "",
         email: newCompany.email || "",
         telephone: newCompany.telephone || "",
         nomRepresentant: newCompany.repnom || "",
         prenomRepresentant: newCompany.repprenom || "",
-        secteurActivite:
-          newCompany.secteurs && newCompany.secteurs.length > 0
-            ? newCompany.secteurs[0]
-            : null,
+        secteursActivite: newCompany.secteurs || [],
         domainesActivite: newCompany.domaines || [],
       });
       showCustomAlert(
@@ -388,16 +468,14 @@ const Dashboard = () => {
           body: JSON.stringify({
             nom: profileData.nom,
             numero_identification: profileData.numeroIdentification,
-            siret: profileData.siret,
+            rccm: profileData.rccm,
             adresse: profileData.adresse,
             email: profileData.email,
             telephone: profileData.telephone,
             repnom: profileData.nomRepresentant,
             repprenom: profileData.prenomRepresentant,
             domaine_ids: profileData.domainesActivite.map((d) => d.id),
-            secteur_ids: profileData.secteurActivite
-              ? [profileData.secteurActivite.id]
-              : [],
+            secteur_ids: profileData.secteursActivite.map((s) => s.id),
           }),
         }
       );
@@ -415,16 +493,13 @@ const Dashboard = () => {
       setProfileData({
         nom: updatedCompany.nom || "",
         numeroIdentification: updatedCompany.numero_identification || "",
-        siret: updatedCompany.siret || "",
+        rccm: updatedCompany.rccm || "",
         adresse: updatedCompany.adresse || "",
         email: updatedCompany.email || "",
         telephone: updatedCompany.telephone || "",
         nomRepresentant: updatedCompany.repnom || "",
         prenomRepresentant: updatedCompany.repprenom || "",
-        secteurActivite:
-          updatedCompany.secteurs && updatedCompany.secteurs.length > 0
-            ? updatedCompany.secteurs[0]
-            : null,
+        secteursActivite: updatedCompany.secteurs || [],
         domainesActivite: updatedCompany.domaines || [],
       });
       showCustomAlert("Profil mis à jour avec succès !", "success");
@@ -800,18 +875,14 @@ const Dashboard = () => {
                           nom: updatedActiveCompany.nom || "",
                           numeroIdentification:
                             updatedActiveCompany.numero_identification || "",
-                          siret: updatedActiveCompany.siret || "",
+                          rccm: updatedActiveCompany.rccm || "",
                           adresse: updatedActiveCompany.adresse || "",
                           email: updatedActiveCompany.email || "",
                           telephone: updatedActiveCompany.telephone || "",
                           nomRepresentant: updatedActiveCompany.repnom || "",
                           prenomRepresentant:
                             updatedActiveCompany.repprenom || "",
-                          secteurActivite:
-                            updatedActiveCompany.secteurs &&
-                            updatedActiveCompany.secteurs.length > 0
-                              ? updatedActiveCompany.secteurs[0]
-                              : null,
+                          secteursActivite: updatedActiveCompany.secteurs || [],
                           domainesActivite: updatedActiveCompany.domaines || [],
                         });
                         showCustomAlert(
@@ -1507,15 +1578,15 @@ const Dashboard = () => {
                   </div>
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">SIRET</label>
+                      <label className="form-label">Numéro RCCM</label>
                       <input
                         type="text"
                         className="form-control"
-                        value={profileData.siret || ""}
+                        value={profileData.rccm || ""}
                         onChange={(e) =>
                           setProfileData({
                             ...profileData,
-                            siret: e.target.value,
+                            rccm: e.target.value,
                           })
                         }
                       />
@@ -1598,9 +1669,9 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  {/* Secteur d'activité */}
+                  {/* Secteurs d'activité (plusieurs possibles) */}
                   <div className="mb-3">
-                    <label className="form-label">Secteur d'activité</label>
+                    <label className="form-label">Secteurs d'activité</label>
                     {loadingSecteurs ? (
                       <p>Chargement des secteurs...</p>
                     ) : errorSecteurs ? (
@@ -1609,22 +1680,31 @@ const Dashboard = () => {
                         {errorSecteurs.message}
                       </p>
                     ) : (
-                      <select
-                        className="form-select"
-                        value={
-                          profileData.secteurActivite
-                            ? profileData.secteurActivite.id
-                            : ""
-                        }
-                        onChange={handleProfileSecteurChange}
-                      >
-                        <option value="">Sélectionner un secteur</option>
+                      <div className="row">
                         {apiSecteursActivite.map((secteur) => (
-                          <option key={secteur.id} value={secteur.id}>
-                            {secteur.nom}
-                          </option>
+                          <div key={secteur.id} className="col-md-6 mb-2">
+                            <div className="form-check">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id={`secteur-${secteur.id}`}
+                                checked={profileData.secteursActivite.some(
+                                  (s) => s.id === secteur.id
+                                )}
+                                onChange={() =>
+                                  handleProfileSecteurToggle(secteur.id)
+                                }
+                              />
+                              <label
+                                className="form-check-label"
+                                htmlFor={`secteur-${secteur.id}`}
+                              >
+                                {secteur.nom}
+                              </label>
+                            </div>
+                          </div>
                         ))}
-                      </select>
+                      </div>
                     )}
                   </div>
 
@@ -1665,6 +1745,27 @@ const Dashboard = () => {
                         ))}
                       </div>
                     )}
+                    <div className="input-group mt-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ajouter un domaine non listé..."
+                        value={newDomaineInputProfile}
+                        onChange={(e) =>
+                          setNewDomaineInputProfile(e.target.value)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleProfileNewDomaine(e);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={handleProfileNewDomaine}
+                      >
+                        Ajouter
+                      </button>
+                    </div>
                   </div>
 
                   <button
@@ -1850,15 +1951,15 @@ const Dashboard = () => {
               </div>
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">SIRET *</label>
+                  <label className="form-label">Numéro RCCM *</label>
                   <input
                     type="text"
                     className="form-control"
-                    value={addEntrepriseData.siret}
+                    value={addEntrepriseData.rccm}
                     onChange={(e) =>
                       setAddEntrepriseData({
                         ...addEntrepriseData,
-                        siret: e.target.value,
+                        rccm: e.target.value,
                       })
                     }
                     required
@@ -1941,7 +2042,7 @@ const Dashboard = () => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Secteur d'activité *</label>
+                <label className="form-label">Secteurs d'activité *</label>
                 {loadingSecteurs ? (
                   <p>Chargement des secteurs...</p>
                 ) : errorSecteurs ? (
@@ -1949,26 +2050,31 @@ const Dashboard = () => {
                     Erreur de chargement des secteurs: {errorSecteurs.message}
                   </p>
                 ) : (
-                  <select
-                    className="form-select"
-                    value={addEntrepriseData.secteurActivite || ""}
-                    onChange={(e) =>
-                      setAddEntrepriseData({
-                        ...addEntrepriseData,
-                        secteurActivite: e.target.value
-                          ? parseInt(e.target.value)
-                          : null,
-                      })
-                    }
-                    required
-                  >
-                    <option value="">Sélectionner un secteur</option>
+                  <div className="row">
                     {apiSecteursActivite.map((secteur) => (
-                      <option key={secteur.id} value={secteur.id}>
-                        {secteur.nom}
-                      </option>
+                      <div key={secteur.id} className="col-md-6 mb-2">
+                        <div className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`add-secteur-${secteur.id}`}
+                            checked={addEntrepriseData.secteursActivite.includes(
+                              secteur.id
+                            )}
+                            onChange={() =>
+                              handleAddEntrepriseSecteur(secteur.id)
+                            }
+                          />
+                          <label
+                            className="form-check-label"
+                            htmlFor={`add-secteur-${secteur.id}`}
+                          >
+                            {secteur.nom}
+                          </label>
+                        </div>
+                      </div>
                     ))}
-                  </select>
+                  </div>
                 )}
               </div>
 
@@ -2007,6 +2113,25 @@ const Dashboard = () => {
                     ))}
                   </div>
                 )}
+                <div className="input-group mt-2">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ajouter un domaine non listé..."
+                    value={newDomaineInputAdd}
+                    onChange={(e) => setNewDomaineInputAdd(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddEntrepriseNewDomaine(e);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={handleAddEntrepriseNewDomaine}
+                  >
+                    Ajouter
+                  </button>
+                </div>
               </div>
             </div>
             <div className="modal-footer">

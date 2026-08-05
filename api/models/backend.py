@@ -62,6 +62,7 @@ class Marche(Base):
     objet: Mapped[str] = mapped_column(Text)
     budget_min: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     budget_max: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+    page_number: Mapped[int | None] = mapped_column(nullable=True)
 
     publication: Mapped[Publication] = relationship()
     type_procedure: Mapped["TypeProcedure | None"] = relationship()
@@ -119,6 +120,7 @@ class Alerte(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     entreprise_id: Mapped[int] = mapped_column(ForeignKey("entreprises.id", ondelete="CASCADE"))
     publication_id: Mapped[int] = mapped_column(ForeignKey("publications.id", ondelete="CASCADE"))
+    marche_id: Mapped[int | None] = mapped_column(ForeignKey("marches.id", ondelete="CASCADE"), nullable=True)
     type_alerte: Mapped[str] = mapped_column(String(50))
     date_alerte: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     contenu_alerte: Mapped[str] = mapped_column(Text)
@@ -126,3 +128,4 @@ class Alerte(Base):
 
     entreprise: Mapped["Entreprise"] = relationship()
     publication: Mapped[Publication] = relationship()
+    marche: Mapped["Marche | None"] = relationship()

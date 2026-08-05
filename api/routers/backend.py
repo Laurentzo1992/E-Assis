@@ -327,6 +327,7 @@ def create_alerte(payload: AlerteCreateUpdateRequest, db: Session = Depends(get_
     alerte = Alerte(
         entreprise_id=payload.entreprise_id,
         publication_id=payload.publication_id,
+        marche_id=payload.marche_id,
         type_alerte=payload.type_alerte,
         date_alerte=payload.date_alerte,
         contenu_alerte=payload.contenu_alerte,

@@ -33,7 +33,17 @@ def list_domaines(db: Session = Depends(get_db)):
 
 @router.post("/api/entreprise/domaines/", response_model=DomaineResponse, status_code=201)
 def create_domaine(payload: DomaineCreate, db: Session = Depends(get_db)):
-    domaine = Domaine(libelle=payload.libelle, description=payload.description)
+    # Meme validation que create_secteur : necessaire depuis que le formulaire entreprise permet
+    # d'ajouter un domaine par saisie libre en plus des cases a cocher (une entree en doublon ou
+    # vide y est possible, alors qu'un unique(libelle) DB brut renverrait une IntegrityError 500
+    # non geree plutot qu'un message exploitable par le frontend).
+    libelle = (payload.libelle or "").strip()
+    if not libelle:
+        return JSONResponse(status_code=400, content={"detail": "Le libellé du domaine est obligatoire."})
+    existant = db.scalar(select(Domaine).where(Domaine.libelle.ilike(libelle)))
+    if existant is not None:
+        return existant
+    domaine = Domaine(libelle=libelle, description=(payload.description or "").strip() or None)
     db.add(domaine)
     db.commit()
     db.refresh(domaine)
@@ -129,7 +139,6 @@ def create_entreprise(
     entreprise = Entreprise(
         nom=payload.nom,
         numero_identification=payload.numero_identification,
-        siret=payload.siret,
         adresse=payload.adresse,
         telephone=payload.telephone,
         email=payload.email,
@@ -204,7 +213,7 @@ def update_entreprise(
 ):
     entreprise = _get_owned_or_404(db, current_user, entreprise_id)
     for field in (
-        "nom", "numero_identification", "siret", "adresse", "telephone", "email",
+        "nom", "numero_identification", "adresse", "telephone", "email",
         "date_creation", "description", "repnom", "repprenom", "rccm",
     ):
         value = getattr(payload, field)

@@ -11,4 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Sans ca, stdout est bufferise par bloc quand il n'est pas attache a un TTY (cas de "docker logs"
+# sur un conteneur detache) - les print() de progression de extract_bulletin.py/match_and_alert.py
+# n'apparaitraient qu'a la fin du process au lieu d'etre visibles en temps reel.
+ENV PYTHONUNBUFFERED=1
+
 ENTRYPOINT ["python", "-m"]

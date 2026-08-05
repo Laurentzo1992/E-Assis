@@ -5,3 +5,14 @@ httpx==0.28.1
 requests==2.32.3
 minio==7.2.12
 pytest==8.3.4
+
+# api/scripts/extract_bulletin.py + match_and_alert.py tournent dans cette image (deja equipee
+# torch/sentence-transformers/qdrant-client pour l'embedding) plutot que dans l'image api - evite
+# de dupliquer torch (~2 Go) dans une deuxieme image pour un besoin qui n'est pas celui du serveur
+# web. sqlalchemy/psycopg2 = acces Postgres (api.models) ; ollama/python-dotenv = llm_service.
+sqlalchemy==2.0.41
+psycopg2-binary==2.9.10
+pydantic==2.11.4
+pydantic-settings==2.10.1
+ollama==0.4.7
+python-dotenv==1.0.1

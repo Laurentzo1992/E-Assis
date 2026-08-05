@@ -8,6 +8,7 @@ champ vide. On passe ici `user_email` explicitement (corrige, cf. plan).
 
 import logging
 import smtplib
+from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from html.parser import HTMLParser
@@ -44,13 +45,27 @@ def render_template(template_name: str, context: dict) -> str:
     return _env.get_template(template_name).render(**context)
 
 
-def send_email(to_email: str, subject: str, html_body: str) -> None:
-    message = MIMEMultipart("alternative")
+def send_email(
+    to_email: str,
+    subject: str,
+    html_body: str,
+    attachment: tuple[str, bytes] | None = None,
+) -> None:
+    message = MIMEMultipart("mixed")
     message["Subject"] = subject
     message["From"] = settings.default_from_email or settings.email_host_user
     message["To"] = to_email
-    message.attach(MIMEText(_strip_tags(html_body), "plain"))
-    message.attach(MIMEText(html_body, "html"))
+
+    body = MIMEMultipart("alternative")
+    body.attach(MIMEText(_strip_tags(html_body), "plain"))
+    body.attach(MIMEText(html_body, "html"))
+    message.attach(body)
+
+    if attachment is not None:
+        filename, png_bytes = attachment
+        image = MIMEImage(png_bytes, name=filename)
+        image["Content-Disposition"] = f'attachment; filename="{filename}"'
+        message.attach(image)
 
     with smtplib.SMTP(settings.email_host, settings.email_port) as server:
         if settings.email_use_tls:
@@ -70,3 +85,34 @@ def send_password_reset_email(user_email: str, user_name: str, reset_link: str) 
         "password_reset_email.html", {"user_name": user_name, "reset_link": reset_link}
     )
     send_email(user_email, "Réinitialisation de votre mot de passe", html)
+
+
+def send_alert_email(
+    user_email: str,
+    entreprise_nom: str,
+    resume: str,
+    organisme: str,
+    numero_bulletin: str,
+    date_bulletin: str | None = None,
+    page_number: int | None = None,
+    page_image: bytes | None = None,
+) -> None:
+    """Canal d'alerte interim en attendant l'approbation Meta du modele WhatsApp (cf.
+    api/scripts/match_and_alert.py) - meme resume redige par le LLM et meme organisme qu'en
+    WhatsApp, mais mis en page pour l'email (pas de contrainte de gabarit Meta) et avec, si
+    fourni, la page du bulletin correspondant au match en piece jointe."""
+    html = render_template(
+        "alerte_marche.html",
+        {
+            "entreprise_nom": entreprise_nom,
+            "resume": resume,
+            "organisme": organisme,
+            "numero_bulletin": numero_bulletin,
+            "date_bulletin": date_bulletin,
+            "page_number": page_number,
+        },
+    )
+    attachment = None
+    if page_image is not None:
+        attachment = (f"bulletin_{numero_bulletin}_page_{page_number}.png", page_image)
+    send_email(user_email, "Nouvelle opportunité de marché public", html, attachment=attachment)

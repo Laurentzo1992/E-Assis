@@ -33,7 +33,6 @@ class EntrepriseResponse(BaseModel):
     id: int
     nom: str
     numero_identification: str
-    siret: str
     adresse: str | None
     telephone: str | None
     email: str | None
@@ -41,7 +40,7 @@ class EntrepriseResponse(BaseModel):
     description: str | None
     repnom: str | None
     repprenom: str | None
-    rccm: str | None
+    rccm: str
     domaines: list[DomaineResponse]
     secteurs: list[SecteurActiviteResponse]
 
@@ -51,7 +50,6 @@ class EntrepriseResponse(BaseModel):
 class EntrepriseCreateUpdateRequest(BaseModel):
     nom: str | None = None
     numero_identification: str | None = None
-    siret: str | None = None
     adresse: str | None = None
     telephone: str | None = None
     email: str | None = None

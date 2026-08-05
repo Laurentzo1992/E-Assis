@@ -15,7 +15,7 @@ def test_creer_et_lister_ses_entreprises(client, unique_email):
     created = client.post(
         "/api/entreprise/entreprises/",
         headers=headers,
-        json={"nom": "Ma Boite", "numero_identification": f"ID-{unique_email}", "siret": unique_email[:20]},
+        json={"nom": "Ma Boite", "numero_identification": f"ID-{unique_email}", "rccm": unique_email[:20]},
     )
     assert created.status_code == 201
     entreprise_id = created.json()["id"]
@@ -36,7 +36,7 @@ def test_isolation_par_proprietaire(client, unique_email):
     created = client.post(
         "/api/entreprise/entreprises/",
         headers=headers_a,
-        json={"nom": "Boite A", "numero_identification": f"ID-A-{unique_email}", "siret": "1" + unique_email.replace("@","").replace(".","")[:13]},
+        json={"nom": "Boite A", "numero_identification": f"ID-A-{unique_email}", "rccm": "1" + unique_email.replace("@","").replace(".","")[:13]},
     )
     entreprise_id = created.json()["id"]
 
@@ -58,7 +58,7 @@ def test_active_et_set_active(client, unique_email):
     created = client.post(
         "/api/entreprise/entreprises/",
         headers=headers,
-        json={"nom": "Boite Active", "numero_identification": f"ID-ACT-{unique_email}", "siret": "2" + unique_email.replace("@","").replace(".","")[:13]},
+        json={"nom": "Boite Active", "numero_identification": f"ID-ACT-{unique_email}", "rccm": "2" + unique_email.replace("@","").replace(".","")[:13]},
     )
     entreprise_id = created.json()["id"]
 

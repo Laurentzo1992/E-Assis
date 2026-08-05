@@ -3,3 +3,7 @@ __pycache__/
 .git
 .pytest_cache/
 *.pdf
+.venv/
+frontend-2/node_modules/
+frontend-2/build/
+db.sqlite3

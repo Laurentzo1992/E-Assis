@@ -32,7 +32,6 @@ class Entreprise(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     nom: Mapped[str] = mapped_column(String(255))
     numero_identification: Mapped[str] = mapped_column(String(100), unique=True)
-    siret: Mapped[str] = mapped_column(String(20), unique=True)
     adresse: Mapped[str | None] = mapped_column(String(255), nullable=True)
     telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -40,7 +39,9 @@ class Entreprise(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     repnom: Mapped[str | None] = mapped_column(String(255), nullable=True)
     repprenom: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    rccm: Mapped[str | None] = mapped_column(String(15), nullable=True)
+    # Identifiant registre du commerce (RCCM) - remplace le SIRET (identifiant francais, sans
+    # rapport avec le Burkina Faso) comme identifiant principal de l'entreprise.
+    rccm: Mapped[str] = mapped_column(String(30), unique=True)
     owner_id: Mapped[int] = mapped_column(ForeignKey("utilisateurs.id", ondelete="CASCADE"))
 
     owner: Mapped["Utilisateur"] = relationship(back_populates="owned_entreprises", foreign_keys=[owner_id])

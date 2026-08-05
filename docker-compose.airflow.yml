@@ -18,6 +18,21 @@ x-airflow-common: &airflow-common
     MINIO_BUCKET: ${MINIO_BUCKET}
     DGCMEF_TAXONOMY_URL: ${DGCMEF_TAXONOMY_URL}
     SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+    # Repasses tels quels par le DAG aux taches extract_structured_data/match_and_alert
+    # (DockerOperator, cf. dags/dag_kbbot_quotidien.py) - le scheduler doit d'abord les avoir
+    # lui-meme dans son environnement pour pouvoir les relire via os.environ au parsing du DAG.
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_DB: ${POSTGRES_DB}
+    JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+    GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+    WHATSAPP_TOKEN: ${WHATSAPP_TOKEN}
+    WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+    WHATSAPP_API_VERSION: ${WHATSAPP_API_VERSION}
+    WHATSAPP_TEMPLATE_NAME: ${WHATSAPP_TEMPLATE_NAME}
+    WHATSAPP_TEMPLATE_LANGUAGE: ${WHATSAPP_TEMPLATE_LANGUAGE}
+    WHATSAPP_DEFAULT_COUNTRY_CODE: ${WHATSAPP_DEFAULT_COUNTRY_CODE}
+    WHATSAPP_MIN_MATCH_SCORE: ${WHATSAPP_MIN_MATCH_SCORE}
   volumes: &airflow-common-volumes
     - ./dags:/opt/airflow/dags
     - ./ingestion:/opt/airflow/ingestion

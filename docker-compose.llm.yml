@@ -1,0 +1,36 @@
+services:
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: kbbot-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    # necessite un GPU NVIDIA pour des temps de reponse raisonnables (partage avec vision-ocr,
+    # cf. docker-compose.yml - ne pas demarrer les deux services GPU simultanement sans verifier
+    # la VRAM disponible sur la carte). Demarrage explicite :
+    #   docker compose -f docker-compose.llm.yml --profile gpu up -d ollama
+    # Puis telecharger le modele une fois :
+    #   docker exec kbbot-ollama ollama pull mistral:7b
+    profiles:
+      - gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+    volumes:
+      # poids du modele telecharge (~4.4 Go) : evite de re-telecharger a chaque redemarrage
+      - ollama_model_cache:/root/.ollama
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
+    name: kbbot_backend
+
+volumes:
+  ollama_model_cache:

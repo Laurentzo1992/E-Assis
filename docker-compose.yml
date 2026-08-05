@@ -82,7 +82,7 @@ services:
 
   # Backend FastAPI "entreprises" (auth + module Entreprise + marches publics) - integre depuis
   # le projet E-Assis (Django/DRF d'origine remplace par FastAPI, meme contrat d'API pour
-  # frontend-2 qui reste dans E-Assis et pointe vers ce service via son port hote 8000).
+  # frontend-2, integre lui aussi dans kbbot, qui pointe vers ce service via son port hote 8000).
   api:
     image: kbbot-api:local
     pull_policy: build
@@ -113,12 +113,16 @@ services:
     depends_on:
       - qdrant
       - minio
+      - postgres
     env_file:
       - .env
     environment:
       QDRANT_URL: http://qdrant:6333
       VISION_OCR_URL: http://vision-ocr:8000
       MINIO_ENDPOINT: minio:9000
+      # extract_bulletin.py / match_and_alert.py (api.scripts.*) uniquement - le reste de ce
+      # conteneur (ingestion.*) ne touche jamais a Postgres.
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     volumes:
       - .:/app
       - ingest_model_cache:/root/.cache

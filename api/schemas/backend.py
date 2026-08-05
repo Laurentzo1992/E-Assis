@@ -142,6 +142,7 @@ class AlerteResponse(BaseModel):
     id: int
     entreprise: EntrepriseResponse
     publication: PublicationResponse
+    marche_id: int | None
     type_alerte: str
     date_alerte: datetime
     contenu_alerte: str
@@ -153,6 +154,7 @@ class AlerteResponse(BaseModel):
 class AlerteCreateUpdateRequest(BaseModel):
     entreprise_id: int | None = None
     publication_id: int | None = None
+    marche_id: int | None = None
     type_alerte: str | None = None
     date_alerte: datetime | None = None
     contenu_alerte: str | None = None
