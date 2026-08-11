@@ -135,7 +135,7 @@ def migrate(sqlite_path: Path) -> None:
                 dict(row),
             )
 
-        # 6. Publications / TypeProcedure / PublicationDomaine
+        # 6. Publications / TypeProcedure
         for row in _rows(sqlite_conn, "backend_publication"):
             pg_conn.execute(
                 text(
@@ -149,14 +149,6 @@ def migrate(sqlite_path: Path) -> None:
         for row in _rows(sqlite_conn, "backend_typeprocedure"):
             pg_conn.execute(
                 text("INSERT INTO types_procedure (id, libelle, description) VALUES (:id, :libelle, :description)"),
-                dict(row),
-            )
-        for row in _rows(sqlite_conn, "backend_publicationdomaine"):
-            pg_conn.execute(
-                text(
-                    "INSERT INTO publication_domaines (id, publication_id, domaine_id) "
-                    "VALUES (:id, :publication_id, :domaine_id)"
-                ),
                 dict(row),
             )
 
@@ -229,7 +221,7 @@ def migrate(sqlite_path: Path) -> None:
         for table, pk in [
             ("domaines", "id"), ("secteurs_activite", "id"), ("utilisateurs", "id"),
             ("entreprises", "id"), ("entreprise_domaines", "id"), ("entreprise_secteurs", "id"),
-            ("publications", "id"), ("types_procedure", "id"), ("publication_domaines", "id"),
+            ("publications", "id"), ("types_procedure", "id"),
             ("marches", "id"), ("lots", "id"), ("alertes", "id"),
         ]:
             _reset_sequence(pg_conn, table, pk)

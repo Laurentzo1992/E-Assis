@@ -12,6 +12,8 @@ from api.scripts.extract_bulletin import (
     _group_by_section,
     _parse_date_bulletin,
     _semble_ligne_de_tableau,
+    _semble_repertoire_fournisseurs,
+    _semble_trop_courte,
 )
 from llm_service.extraction_prompts import AvisExtrait, ExtractionEchouee, extraire_avis, parse_llm_date
 
@@ -175,6 +177,99 @@ def test_semble_ligne_de_tableau_laisse_passer_les_vrais_titres():
         assert not _semble_ligne_de_tableau(titre), titre
 
 
+def test_semble_repertoire_fournisseurs_detecte_une_fiche_synthese_reelle():
+    """Bug reel constate sur le bulletin n°4459 : une section de "fiche de synthese de la base de
+    donnees des fournisseurs" (nom d'entreprise detecte a tort comme titre d'avis par le chunking,
+    cf. ingestion/chunking.py) contenant plusieurs lignes IFU a fait halluciner au LLM un avis
+    d'appel d'offres complet ("Fourniture de materiel informatique pour les services de la
+    primature") ne correspondant a aucun texte reel du bulletin."""
+    texte = """FASO EQUIPEMENT PAALGA
+OUEDRAOGO ISSAKA
+00106336Y
+BFOUA2018A4836
+76097609/63316161
+24
+FIRST UNITED GROUP
+OUEDRAOGO YACOUBA
+00200146A
+BFOUA-01-2023-B12-04339
+54145900"""
+    assert _semble_repertoire_fournisseurs(texte)
+
+
+def test_semble_repertoire_fournisseurs_detecte_ifu_avec_espace():
+    """Constate en reel sur le bulletin n°4460 : l'extraction PDF insere parfois une espace entre
+    le numero IFU et sa lettre finale (ex. "00223311 U" au lieu de "00223311U")."""
+    texte = """2
+SONEVI/MS Sarl
+BF- OHG -2023 B 667 00223311 U
+Retenu
+3
+WE SEE INNOV GROUP
+BF- OUA-01-2025-B13-18656 00291703 X
+Non retenu"""
+    assert _semble_repertoire_fournisseurs(texte)
+
+
+def test_semble_repertoire_fournisseurs_laisse_passer_un_vrai_avis():
+    texte = "Demande de prix n°2026-006/SONATUR relative a l'acquisition de logiciels ArchiCAD, QGIS et MS PROJECT."
+    assert not _semble_repertoire_fournisseurs(texte)
+
+
+def test_semble_trop_courte_detecte_un_en_tete_de_page_seul():
+    """Bug reel constate sur le bulletin n°4459 : une section reduite au seul en-tete de page
+    repete (~64 caracteres, aucun contenu) a quand meme fait halluciner un avis complet au LLM."""
+    texte = """N°3827 – lundi 04 Mars 2024
+
+37
+
+N° 4459 – Mercredi 05 Août 2026"""
+    assert _semble_trop_courte(texte)
+
+
+def test_semble_trop_courte_detecte_la_variante_longue_de_l_en_tete():
+    """Meme bug, variante plus longue (151 caracteres, avec les URL) constatee sur le bulletin
+    n°4460 - le premier seuil de 100 caracteres etait trop bas pour l'exclure."""
+    texte = """N°3827 – lundi 04 Mars 2024
+
+59
+
+N° 4460 – Jeudi 06 Août 2026
+
+www.dgcmef.gov.bf                                                    www.finances.gov.bf"""
+    assert _semble_trop_courte(texte)
+
+
+def test_semble_trop_courte_laisse_passer_un_vrai_avis():
+    """Texte representatif d'un vrai avis reel (organisme + objet + reference + financement,
+    cf. bulletin n°4459 page 76) - toujours largement au-dessus du seuil en conditions reelles."""
+    texte = (
+        "MINISTERE DE L'AGRICULTURE, DE L'EAU, DES RESSOURCES ANIMALES ET HALIEUTIQUES\n\n"
+        "Acquisition de materiel et outillage techniques au profit de la Direction Generale "
+        "de l'Environnement et du Cadre de Vie (DGECV)\n\n"
+        "Avis de demande de prix\n"
+        "N°2026-13f/MAERAH/SG/DMP\n"
+        "Financement : Budget de l'Etat, Exercice 2026\n"
+        "Montant previsionnel : Cinquante-cinq millions quatre-vingt-quatre mille sept cent."
+    )
+    assert not _semble_trop_courte(texte)
+
+
+def test_semble_repertoire_fournisseurs_laisse_passer_un_tableau_evaluation_technique():
+    """Non-regression : un tableau d'evaluation technique/prix (sans colonne IFU) a deja permis
+    d'extraire avec succes le resultat FZ SERVICES SARL sur le bulletin n°4458 (montant exact
+    retrouve) - ce type de tableau ne doit jamais etre filtre avant l'appel LLM, meme s'il repete
+    "Non Conforme" plusieurs fois."""
+    texte = """GRACIERA SERVICES
+35 475 000
+Non Conforme
+ESOFT BURKINA
+34 701 440
+Non Conforme
+Attributaire : L'entreprise « FZ SERVICES SARL » a ete declaree attributaire du marche."""
+    assert not _semble_repertoire_fournisseurs(texte)
+
+
 @pytest.mark.parametrize(
     "enveloppe",
     ["avis_1", "avises", "appel_offre", "avis_marche", "n_importe_quelle_cle"],
@@ -270,3 +365,44 @@ def test_corriger_type_avis_garde_llm_si_aucun_marqueur():
     corrige = _corriger_type_avis(avis, texte, "section test")
 
     assert corrige.type_avis == "autre"
+
+
+def test_corriger_type_avis_ecrase_llm_meme_si_resultat_cite_sa_demande_de_prix():
+    """Bug reel constate lors de l'audit du 09/08/2026 (bulletins 4457-4461, ~15 marches affectes) :
+    un resultat de "demande de prix" cite systematiquement en en-tete "Demande de prix n°XXX du
+    DATE pour <objet>" pour rappeler de quel appel il presente le resultat - un gabarit identique a
+    celui d'un nouvel appel. Avant retrait de ce marqueur trop generique de _MARQUEURS_APPEL_OFFRE,
+    cette citation neutralisait a tort le marqueur resultat pourtant present ('Non conforme'),
+    rendant la section 'ambigue' et laissant un LLM faillible trancher seul."""
+    avis = _avis_minimal("appel_offre")
+    texte = (
+        "Demande de prix n°2026-016/MEBAPLN/SG/DMP du 15/06/2026 pour l'entretien et la maintenance "
+        "des installations solaires, du circuit electrique, de la plomberie et des appareils "
+        "sanitaires au profit du BCMP, de la DGESS, et du SP-PSDEBS (marche a commandes)\n"
+        "SAID MULTI-SERVICES 8 237 750 15 439 750 - - - - - - Non conforme "
+        "Absence des items 90, 91, 92, 93 et 94"
+    )
+
+    corrige = _corriger_type_avis(avis, texte, "section test")
+
+    assert corrige.type_avis == "resultat"
+
+
+def test_corriger_type_avis_ecrase_llm_si_attributaire_seul_sans_qualificatif():
+    """Bug reel constate sur le bulletin n°4461 (marche SONATUR n°2026-004/DG-SONATUR/PRM) : le
+    LLM classait 'appel_offre' une section de resultat ou 'Attributaire' apparait seul, comme
+    etiquette de tableau suivie du nom du gagnant, sans le qualificatif 'provisoire'/'definitif'
+    que l'ancien marqueur exigeait - laissant ainsi un marche deja attribue rejoindre le pool des
+    appels d'offres ouverts et generer de fausses alertes 'nouvelle opportunite'."""
+    avis = _avis_minimal("appel_offre")
+    texte = (
+        "Reference de publication de resultats de l'AMI : RMP n°4407 du 25/05/2026 (page 13)\n"
+        "Date de deliberation : 24 juillet 2026\n"
+        "Attributaire\n"
+        "IKA SOLUTION LTD pour un montant de vingt-deux millions quatre cent vingt mille "
+        "(22 420 000) francs CFA TTC avec un delai d'execution de quatre-vingt-dix (90) jours"
+    )
+
+    corrige = _corriger_type_avis(avis, texte, "section test")
+
+    assert corrige.type_avis == "resultat"

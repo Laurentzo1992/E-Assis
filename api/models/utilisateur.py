@@ -50,3 +50,6 @@ class Utilisateur(Base):
         back_populates="owner", foreign_keys="Entreprise.owner_id"
     )
     active_entreprise: Mapped["Entreprise | None"] = relationship(foreign_keys=[active_entreprise_id])
+
+    def __str__(self) -> str:
+        return self.email

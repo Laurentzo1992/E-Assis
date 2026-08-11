@@ -4,6 +4,6 @@ __pycache__/
 .pytest_cache/
 *.pdf
 .venv/
-frontend-2/node_modules/
-frontend-2/build/
+frontend/node_modules/
+frontend/build/
 db.sqlite3

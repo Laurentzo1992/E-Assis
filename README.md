@@ -19,8 +19,8 @@ Burkina Faso, PDF texte natif avec pages scannees ponctuelles).
 - **Postgres + FastAPI** (`api/`) : backend "entreprises" (auth JWT, module Entreprise, marches
   publics) - integre depuis le projet E-Assis (Django/DRF d'origine remplace par FastAPI, meme
   contrat d'API).
-- **frontend-2/** : interface React (inscription/connexion/dashboard), integree depuis E-Assis,
-  pointe vers l'API sur `http://localhost:8000` (`npm --prefix frontend-2 start`, port 3000).
+- **frontend/** : interface React (inscription/connexion/dashboard), integree depuis E-Assis,
+  pointe vers l'API sur `http://localhost:8000` (`docker compose up -d frontend`, port 3000).
 
 ## Demarrage
 

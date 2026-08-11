@@ -21,6 +21,13 @@ x-airflow-common: &airflow-common
     # Repasses tels quels par le DAG aux taches extract_structured_data/match_and_alert
     # (DockerOperator, cf. dags/dag_kbbot_quotidien.py) - le scheduler doit d'abord les avoir
     # lui-meme dans son environnement pour pouvoir les relire via os.environ au parsing du DAG.
+    # OLLAMA_HOST manquait ici jusqu'a present : le DAG le cherchait bien dans os.environ, mais
+    # comme il n'etait jamais transmis au scheduler, les conteneurs d'extraction retombaient
+    # silencieusement sur le defaut de llm_service/llm_client.py (http://localhost:11434, qui ne
+    # resout jamais l'hote depuis un conteneur en network_mode=kbbot_backend). Fonctionnait par
+    # coincidence sur cette machine de dev (particularites reseau de Docker Desktop/Windows) - a
+    # ne surtout pas supposer fiable sur un VPS Linux, d'ou ce correctif.
+    OLLAMA_HOST: ${OLLAMA_HOST}
     POSTGRES_USER: ${POSTGRES_USER}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     POSTGRES_DB: ${POSTGRES_DB}

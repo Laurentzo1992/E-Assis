@@ -1,13 +1,17 @@
 """Routes du module Entreprise - reproduit entreprise/urls.py (prefixe /api/entreprise/), toutes
 les routes necessitent une authentification (IsAuthenticated dans l'original)."""
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.models.abonnement import Abonnement
 from api.models.entreprise import Domaine, Entreprise, EntrepriseDomaine, EntrepriseSecteur, SecteurActivite
+from api.models.tarif import get_tarif
 from api.models.utilisateur import Utilisateur
 from api.schemas.entreprise import (
     DomaineCreate,
@@ -153,6 +157,22 @@ def create_entreprise(
     db.commit()
     db.refresh(entreprise)
     _apply_relations(db, entreprise, payload.domaine_ids, payload.secteur_ids)
+
+    # Essai gratuit demarre immediatement - pas d'abonnement paye tant qu'aucun paiement confirme
+    # ne l'a prolonge (cf. api/routers/paiement.py). Duree lue en base (table tarifs_abonnement,
+    # modifiable depuis /admin) plutot qu'en variable d'environnement.
+    maintenant = datetime.now(timezone.utc)
+    tarif = get_tarif(db)
+    db.add(
+        Abonnement(
+            entreprise_id=entreprise.id,
+            statut="essai",
+            date_debut_essai=maintenant,
+            date_fin_essai=maintenant + timedelta(days=tarif.essai_gratuit_jours),
+        )
+    )
+    db.commit()
+
     db.refresh(entreprise)
     return entreprise
 

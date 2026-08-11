@@ -16,7 +16,7 @@ from typing import Literal
 from sqlalchemy.orm import Session
 
 from api.database import SessionLocal
-from api.models.backend import Marche, Publication, Resultat, TypeProcedure
+from api.models.backend import AppelOffre, Marche, Publication, Resultat, TypeProcedure
 from api.models.entreprise import Entreprise
 from ingestion import qdrant_store
 from llm_service.extraction_prompts import AvisExtrait, ExtractionEchouee, extraire_avis, parse_llm_date
@@ -35,6 +35,45 @@ def _semble_ligne_de_tableau(section_title: str | None) -> bool:
     return bool(section_title) and bool(_LIGNE_DE_TABLEAU.match(section_title))
 
 
+# Detecte les tableaux administratifs (repertoire de fournisseurs, evaluation de recevabilite)
+# dont le nom d'une entreprise est mal identifie comme titre d'avis par le chunking (cf.
+# ingestion/chunking.py, _is_heading), et que le LLM, prive de tout avis reel a en extraire,
+# invente de toutes pieces plutot que de repondre par un tableau vide comme demande - constate
+# deux fois en reel sur les bulletins n°4459/4460, avec deux avis totalement fabriques
+# ("Fourniture de materiel informatique pour les services de la primature", "Avis de marche pour
+# la fourniture de materiel informatique", aucun des deux ne correspondant a un texte reel).
+# Le numero IFU (8 chiffres + 1 lettre, parfois separe par une espace insecable du PDF, ex.
+# "00223311 U" au lieu de "00223311U") est un signal distinctif : present dans les deux cas reels
+# rencontres, absent des tableaux d'evaluation technique/prix (ex. celui qui a produit avec succes
+# le resultat FZ SERVICES SARL sur le bulletin n°4458 - pas de colonne IFU dans ce format-la).
+# Volontairement PAS de detection par vocabulaire "Conforme"/"Retenu" seul : ce vocabulaire
+# apparait aussi dans des resultats legitimes a plusieurs lots (dont FZ SERVICES SARL), qu'on ne
+# veut surtout pas exclure de l'extraction.
+_IFU_PATTERN = re.compile(r"\b\d{8}\s?[A-Z]\b")
+_SEUIL_REPERTOIRE = 2
+
+
+def _semble_repertoire_fournisseurs(texte: str) -> bool:
+    return len(_IFU_PATTERN.findall(texte)) >= _SEUIL_REPERTOIRE
+
+
+# Constate en reel sur les bulletins n°4459 et n°4460 : certaines sections issues du regroupement
+# par blocs contigus (cf. _group_by_section) ne contiennent QUE l'en-tete de page repete sur
+# chaque page du bulletin ("N°3827 - lundi 04 Mars 2024 / {page} / N°4460 - ... / www.dgcmef...
+# www.finances...") - constate entre 64 et 151 caracteres selon les variantes d'espacement du
+# gabarit, aucun contenu reel. Prive de tout avis a extraire, le LLM en a invente un de toutes
+# pieces au lieu de repondre par un tableau vide, alors que ce n'est meme pas un tableau
+# administratif (donc invisible a _semble_repertoire_fournisseurs) : juste du vide. Seuil fixe a
+# 200 avec une marge large au-dessus des variantes d'en-tete observees (151 max) : un avis reel
+# (organisme + objet + reference + financement) tient toujours sur plusieurs centaines de
+# caracteres au minimum.
+_LONGUEUR_MIN_SECTION = 200
+
+
+def _semble_trop_courte(texte: str) -> bool:
+    return len(texte.strip()) < _LONGUEUR_MIN_SECTION
+
+
 def _sans_accents(texte: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKD", texte) if not unicodedata.combining(c))
 
@@ -43,14 +82,25 @@ def _sans_accents(texte: str) -> str:
 # distinguer un resultat d'un appel d'offres - contrairement a la classification du LLM sur le
 # *sens* du texte (qui peut halluciner un avis absent, ou mal trancher sur une section ambigue),
 # ces formulations sont des marqueurs administratifs quasi-fixes du gabarit DGCMEF.
+
 _MARQUEURS_RESULTAT = re.compile(
-    r"a ete declaree? attributaire|attributaire (provisoire|definitif)|"
-    r"resultats? (provisoires?|definitifs?)|proces-verbal d.attribution|non conforme|"
+    r"a ete declaree? attributaire|attributaire|"
+    r"resultats? (provisoires?|definitifs?)|resultats? de l.(ami|consultation)|"
+    r"proces-verbal d.attribution|non conforme|"
     r"ecartee du classement",
     re.IGNORECASE,
 )
+
+# Volontairement PAS de "demande de prix n°..." ici (retire suite a l'audit du 09/08/2026) : ce
+# gabarit sert de citation d'en-tete IDENTIQUE dans les DEUX types d'avis - un resultat cite
+# systematiquement "Demande de prix n°XXX du DATE pour/relative a <objet>" pour rappeler de quel
+# appel il presente le resultat, exactement comme le fait un nouvel appel. Le garder ici rendait
+# "ambigu" (donc laisse a la merci du LLM) la quasi-totalite des vrais resultats de demande de
+# prix, qui contiennent pourtant deja un marqueur resultat fiable (attributaire, non conforme...)
+# neutralise par cette fausse ambiguite - cause reelle de ~15 marches de resultat mal classes en
+# appel d'offre sur les bulletins 4457-4461, dont deux ayant deja genere de fausses alertes.
 _MARQUEURS_APPEL_OFFRE = re.compile(
-    r"avis d.appel d.offres?|demande de prix n|avis a manifestation d.interet|"
+    r"avis d.appel d.offres?|avis a manifestation d.interet|"
     r"dossier d.appel d.offres?|appel a manifestation d.interet",
     re.IGNORECASE,
 )
@@ -193,15 +243,51 @@ def _get_or_create_type_procedure(db: Session, libelle: str | None) -> TypeProce
     return type_procedure
 
 
-def _find_entreprise_by_name(db: Session, nom: str) -> Entreprise | None:
-    """Recherche approximative (insensible a la casse, correspondance partielle dans les deux
-    sens) - ne cree jamais d'entreprise tierce, se contente de lier si un compte existant
-    correspond (cf. plan : Entreprise exige un owner, pas de place pour un tiers non-inscrit)."""
-    return (
-        db.query(Entreprise)
-        .filter(Entreprise.nom.ilike(f"%{nom}%"))
-        .one_or_none()
-    )
+def _find_entreprise_attributaire(db: Session, avis: AvisExtrait) -> Entreprise | None:
+    """Rapproche l'attributaire d'un resultat avec une Entreprise inscrite, par ordre de fiabilite
+    decroissante : RCCM et IFU (identifiants officiels uniques, quasi jamais presents dans le
+    texte mais une preuve quasi certaine quand ils le sont) avant le nom (correspondance
+    approximative ILIKE, peut confondre deux entreprises au nom proche) et le telephone (dernier
+    recours, le moins fiable - un numero peut changer ou etre partage). S'arrete au premier champ
+    disponible qui trouve une correspondance plutot que d'essayer tous les champs, pour ne jamais
+    laisser un champ moins fiable contredire un champ plus fiable deja tranche. Ne cree jamais
+    d'entreprise tierce (cf. plan : Entreprise exige un owner, pas de place pour un tiers
+    non-inscrit). `.first()` plutot que `.one_or_none()` : le telephone et le nom n'ont pas de
+    contrainte d'unicite en base, une correspondance en double ne doit jamais faire planter
+    l'extraction."""
+    if avis.entreprise_attributaire_rccm:
+        entreprise = (
+            db.query(Entreprise).filter(Entreprise.rccm == avis.entreprise_attributaire_rccm).first()
+        )
+        if entreprise is not None:
+            return entreprise
+
+    if avis.entreprise_attributaire_ifu:
+        entreprise = (
+            db.query(Entreprise)
+            .filter(Entreprise.numero_identification == avis.entreprise_attributaire_ifu)
+            .first()
+        )
+        if entreprise is not None:
+            return entreprise
+
+    if avis.entreprise_attributaire_nom:
+        entreprise = (
+            db.query(Entreprise).filter(Entreprise.nom.ilike(f"%{avis.entreprise_attributaire_nom}%")).first()
+        )
+        if entreprise is not None:
+            return entreprise
+
+    if avis.entreprise_attributaire_telephone:
+        entreprise = (
+            db.query(Entreprise)
+            .filter(Entreprise.telephone == avis.entreprise_attributaire_telephone)
+            .first()
+        )
+        if entreprise is not None:
+            return entreprise
+
+    return None
 
 
 def _upsert_avis(db: Session, publication: Publication, avis: AvisExtrait, page_number: int) -> Marche:
@@ -229,18 +315,25 @@ def _upsert_avis(db: Session, publication: Publication, avis: AvisExtrait, page_
     if avis.type_avis == "resultat":
         resultat = db.query(Resultat).filter(Resultat.marche_id == marche.id).one_or_none()
         if resultat is None:
-            entreprise = (
-                _find_entreprise_by_name(db, avis.entreprise_attributaire_nom)
-                if avis.entreprise_attributaire_nom
-                else None
-            )
+            entreprise = _find_entreprise_attributaire(db, avis)
             resultat = Resultat(
                 marche_id=marche.id,
                 date_attribution=parse_llm_date(avis.date_avis),
+                entreprise_attributaire_nom=avis.entreprise_attributaire_nom,
                 entreprise_attributaire_id=entreprise.id if entreprise else None,
                 montant_attribue=avis.montant_attribue,
             )
             db.add(resultat)
+            db.commit()
+    elif avis.type_avis == "appel_offre":
+        # AvisExtrait ne capture pas encore les champs specifiques a l'appel d'offre (date de
+        # depot, reference du dossier...) - seule la ligne d'extension existe pour l'instant, afin
+        # que le marche soit au moins correctement marque comme "appel d'offre" plutot que de
+        # rester une simple ligne Marche sans extension (ce qui laissait la table appels_offre et
+        # le site admin vides malgre des marches bien extraits).
+        appel_offre = db.query(AppelOffre).filter(AppelOffre.marche_id == marche.id).one_or_none()
+        if appel_offre is None:
+            db.add(AppelOffre(marche_id=marche.id))
             db.commit()
 
     return marche
@@ -253,10 +346,16 @@ def extract_bulletin(object_name: str) -> int:
         raise ValueError(f"Aucun chunk trouve dans Qdrant pour {object_name!r} - bulletin pas encore vectorise ?")
 
     tous_les_groupes = _group_by_section(chunks)
-    groups = [s for s in tous_les_groupes if not _semble_ligne_de_tableau(s.label)]
+    groups = [
+        s
+        for s in tous_les_groupes
+        if not _semble_ligne_de_tableau(s.label)
+        and not _semble_repertoire_fournisseurs(s.texte)
+        and not _semble_trop_courte(s.texte)
+    ]
     nb_ignorees = len(tous_les_groupes) - len(groups)
     if nb_ignorees:
-        print(f"{nb_ignorees} sections ignorees (lignes de tableau detectees avant tout appel LLM)")
+        print(f"{nb_ignorees} sections ignorees (tableaux/repertoires/sections trop courtes detectees avant tout appel LLM)")
 
     db = SessionLocal()
     nb_marches = 0

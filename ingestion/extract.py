@@ -1,5 +1,4 @@
 """Extraction du texte d'un PDF, page par page.
-
 Les bulletins DGCMEF sont en texte natif sur l'ecrasante majorite des pages, mais melangent
 ponctuellement des pages scannees (annexes, cachets, signatures) : sans fallback, ces pages
 resteraient totalement invisibles pour la recherche semantique plutot que juste moins bien

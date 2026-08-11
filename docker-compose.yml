@@ -80,9 +80,37 @@ services:
     networks:
       - backend
 
+  # Frontend React (CRA, dev server) - conteneurise pour ne plus dependre d'un process npm start
+  # natif lance a la main (qui s'arrete silencieusement avec le terminal/la session qui l'a lance,
+  # sans redemarrage automatique - contrairement aux services ci-dessus deja tous en conteneur).
+  frontend:
+    image: kbbot-frontend:local
+    pull_policy: build
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    container_name: kbbot-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      WDS_SOCKET_PORT: "0"
+      # react-scripts 5 (webpack 5) utilise watchpack, pas chokidar, pour surveiller les fichiers -
+      # CHOKIDAR_USEPOLLING (defini dans le Dockerfile) ne le concerne pas ; sans cette variable,
+      # aucun changement de fichier sur le volume monte depuis Windows n'etait detecte.
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./frontend:/app
+      # Volume anonyme : masque le node_modules monte depuis l'hote (installe pour Windows) par
+      # celui installe dans l'image (Linux) - des paquets ont des binaires natifs specifiques a
+      # l'OS, les melanger casserait le demarrage.
+      - /app/node_modules
+    networks:
+      - backend
+
   # Backend FastAPI "entreprises" (auth + module Entreprise + marches publics) - integre depuis
   # le projet E-Assis (Django/DRF d'origine remplace par FastAPI, meme contrat d'API pour
-  # frontend-2, integre lui aussi dans kbbot, qui pointe vers ce service via son port hote 8000).
+  # frontend, integre lui aussi dans kbbot, qui pointe vers ce service via son port hote 8000).
   api:
     image: kbbot-api:local
     pull_policy: build

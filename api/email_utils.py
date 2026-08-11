@@ -115,4 +115,7 @@ def send_alert_email(
     attachment = None
     if page_image is not None:
         attachment = (f"bulletin_{numero_bulletin}_page_{page_number}.png", page_image)
-    send_email(user_email, "Nouvelle opportunité de marché public", html, attachment=attachment)
+    # Nom de l'entreprise dans le sujet (pas seulement le corps) : un compte gerant plusieurs
+    # entreprises recoit un email distinct par entreprise matchee, avec jusque-la un sujet
+    # identique pour toutes - impossible a distinguer sans ouvrir chaque message.
+    send_email(user_email, f"Nouvelle opportunité de marché public — {entreprise_nom}", html, attachment=attachment)

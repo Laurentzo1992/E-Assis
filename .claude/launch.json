@@ -2,10 +2,8 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "frontend-2",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "frontend-2", "start"],
-      "port": 3000
+      "name": "frontend",
+      "url": "http://localhost:3000"
     }
   ]
 }

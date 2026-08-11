@@ -17,6 +17,12 @@ class Domaine(Base):
     libelle: Mapped[str] = mapped_column(String(100), unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Sans __str__, sqladmin affiche "<Domaine object at 0x...>" partout ou ce modele apparait en
+    # relation (liste Entreprise, formulaires) au lieu du libelle - cf. doc sqladmin sur
+    # column_list/relationships.
+    def __str__(self) -> str:
+        return self.libelle
+
 
 class SecteurActivite(Base):
     __tablename__ = "secteurs_activite"
@@ -24,6 +30,9 @@ class SecteurActivite(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     nom: Mapped[str] = mapped_column(String(100), unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    def __str__(self) -> str:
+        return self.nom
 
 
 class Entreprise(Base):
@@ -47,6 +56,9 @@ class Entreprise(Base):
     owner: Mapped["Utilisateur"] = relationship(back_populates="owned_entreprises", foreign_keys=[owner_id])
     domaines: Mapped[list[Domaine]] = relationship(secondary="entreprise_domaines", viewonly=True)
     secteurs: Mapped[list[SecteurActivite]] = relationship(secondary="entreprise_secteurs", viewonly=True)
+
+    def __str__(self) -> str:
+        return self.nom
 
 
 class EntrepriseDomaine(Base):

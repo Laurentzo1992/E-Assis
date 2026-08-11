@@ -9,13 +9,13 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from api.database import Base
 
 if TYPE_CHECKING:
-    from api.models.entreprise import Domaine, Entreprise
+    from api.models.entreprise import Entreprise
 
 
 class Publication(Base):
@@ -29,7 +29,8 @@ class Publication(Base):
     source_url: Mapped[str | None] = mapped_column(String(200), nullable=True)
     type_publication: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    domaines: Mapped[list["Domaine"]] = relationship(secondary="publication_domaines", viewonly=True)
+    def __str__(self) -> str:
+        return f"{self.numero} - {self.titre}"
 
 
 class TypeProcedure(Base):
@@ -39,14 +40,8 @@ class TypeProcedure(Base):
     libelle: Mapped[str] = mapped_column(String(100), unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-
-class PublicationDomaine(Base):
-    __tablename__ = "publication_domaines"
-    __table_args__ = (UniqueConstraint("publication_id", "domaine_id"),)
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    publication_id: Mapped[int] = mapped_column(ForeignKey("publications.id", ondelete="CASCADE"))
-    domaine_id: Mapped[int] = mapped_column(ForeignKey("domaines.id", ondelete="CASCADE"))
+    def __str__(self) -> str:
+        return self.libelle
 
 
 class Marche(Base):
@@ -68,6 +63,10 @@ class Marche(Base):
     type_procedure: Mapped["TypeProcedure | None"] = relationship()
     lots: Mapped[list["Lot"]] = relationship(back_populates="marche")
 
+    def __str__(self) -> str:
+        objet = self.objet or ""
+        return objet if len(objet) <= 60 else objet[:60] + "…"
+
 
 class AppelOffre(Base):
     __tablename__ = "appels_offre"
@@ -83,12 +82,21 @@ class AppelOffre(Base):
 
     marche: Mapped[Marche] = relationship()
 
+    def __str__(self) -> str:
+        return f"Appel d'offre - {self.marche}"
+
 
 class Resultat(Base):
     __tablename__ = "resultats"
 
     marche_id: Mapped[int] = mapped_column(ForeignKey("marches.id", ondelete="CASCADE"), primary_key=True)
     date_attribution: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # Nom brut extrait du bulletin par le LLM, toujours renseigne quand le texte nomme un
+    # attributaire - independant de entreprise_attributaire_id, qui ne pointe vers une Entreprise
+    # que si le gagnant est par ailleurs un client inscrit sur la plateforme (rare : la grande
+    # majorite des attributaires reels ne le sont jamais). Sans ce champ, un resultat sans
+    # correspondance perdait silencieusement le nom du gagnant.
+    entreprise_attributaire_nom: Mapped[str | None] = mapped_column(String(255), nullable=True)
     entreprise_attributaire_id: Mapped[int | None] = mapped_column(
         ForeignKey("entreprises.id", ondelete="SET NULL"), nullable=True
     )
@@ -100,6 +108,9 @@ class Resultat(Base):
 
     marche: Mapped[Marche] = relationship()
     entreprise_attributaire: Mapped["Entreprise | None"] = relationship()
+
+    def __str__(self) -> str:
+        return f"Résultat - {self.marche}"
 
 
 class Lot(Base):
@@ -113,6 +124,9 @@ class Lot(Base):
 
     marche: Mapped[Marche] = relationship(back_populates="lots")
 
+    def __str__(self) -> str:
+        return f"Lot {self.numero_lot} - {self.marche}"
+
 
 class Alerte(Base):
     __tablename__ = "alertes"
@@ -125,7 +139,11 @@ class Alerte(Base):
     date_alerte: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     contenu_alerte: Mapped[str] = mapped_column(Text)
     canal_alerte: Mapped[str] = mapped_column(String(30))
+    lu: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("false"))
 
     entreprise: Mapped["Entreprise"] = relationship()
     publication: Mapped[Publication] = relationship()
     marche: Mapped["Marche | None"] = relationship()
+
+    def __str__(self) -> str:
+        return f"{self.type_alerte} - {self.entreprise}"

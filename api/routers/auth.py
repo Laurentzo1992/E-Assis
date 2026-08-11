@@ -1,6 +1,6 @@
 """Routes d'authentification - reproduit exactement les chemins et formats de reponse de
 authentication/urls.py + les deux routes /api/token/* de core/urls.py, verifies contre
-frontend-2/src/services/auth.js et ActivateAccount.jsx (seule route reellement appelee cote
+frontend/src/services/auth.js et ActivateAccount.jsx (seule route reellement appelee cote
 frontend pour l'activation : GET /api/auth/activate/{token}/).
 """
 
@@ -22,7 +22,6 @@ from api.schemas.auth import (
     ChangePasswordRequest,
     GoogleLoginRequest,
     LoginRequest,
-    MessageResponse,
     ProfileResponse,
     ProfileUpdateRequest,
     RegisterRequest,
@@ -300,7 +299,7 @@ def reset_password_confirm(payload: ResetPasswordConfirmRequest, db: Session = D
     return {"message": "Votre mot de passe a été réinitialisé avec succès."}
 
 
-# --- /api/auth/verify-email/{uidb64}/{token}/ (flux secondaire, non utilise par frontend-2) ---
+# --- /api/auth/verify-email/{uidb64}/{token}/ (flux secondaire, non utilise par frontend) ---
 
 _EMAIL_VERIFY_PURPOSE = "email_verify"
 

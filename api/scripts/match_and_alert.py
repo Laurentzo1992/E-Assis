@@ -30,29 +30,49 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
-import fitz  # pymupdf
 import numpy as np
 from qdrant_client.http import models as qmodels
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from api.database import SessionLocal
 from api.config import settings
 from api.email_utils import send_alert_email
+from api.models.abonnement import Abonnement
 from api.models.backend import Alerte, Marche, Publication, Resultat
 from api.models.entreprise import Entreprise
 from api.models.utilisateur import Utilisateur
 from api.whatsapp_client import WhatsAppSendError, send_whatsapp_template
 from ingestion import config as ingestion_config
 from ingestion import qdrant_store
-from ingestion.embed import embed_texts
 from llm_service.whatsapp_prompts import RedactionEchouee, resumer_objet
 
 logger = logging.getLogger(__name__)
+
+# Nombre max d'alertes "marche" (appel d'offre) envoyees a une meme entreprise pour un meme
+# bulletin - garde-fou anti-spam au cas ou de tres nombreux marches depasseraient le seuil pour un
+# profil tres large, tout en couvrant tous les cas reels observes (jamais plus de 2-3 candidats
+# au-dessus du seuil sur les bulletins testes).
+MAX_MATCHES_PAR_ENTREPRISE = 5
+
+
+def _selectionner_marches_pertinents(similarites: np.ndarray, seuil: float, max_matches: int = MAX_MATCHES_PAR_ENTREPRISE) -> list[int]:
+    """Indices (dans `similarites`) des marches a alerter pour une entreprise : tous ceux au-dessus
+    de `seuil`, tries par score decroissant, plafonnes a `max_matches` - pas seulement le meilleur
+    (argmax), qui ignorait silencieusement d'autres marches tout aussi pertinents (cf. docstring de
+    module et cas reel SONABHY SOC/SAAS)."""
+    top_indices = np.argsort(similarites)[::-1][:max_matches]
+    return [int(idx) for idx in top_indices if similarites[idx] >= seuil]
 
 
 def _fetch_bulletin_pdf(object_name: str) -> "fitz.Document | None":
     """Telecharge le PDF du bulletin depuis MinIO pour en extraire les pages jointes aux emails
     d'alerte. Best-effort : sans PDF, les emails partent quand meme, juste sans piece jointe."""
+    # Importe ici (pas au niveau module) pour que ce fichier reste importable - et donc testable -
+    # sur un environnement ou pymupdf n'est pas installe/fonctionnel (ex. venv hote Windows sans
+    # les DLL requises), sans affecter l'usage reel (conteneur ingest, ou pymupdf fonctionne).
+    import fitz  # pymupdf
+
     try:
         client = ingestion_config.build_minio_client()
         response = client.get_object(ingestion_config.MINIO_BUCKET, object_name)
@@ -81,10 +101,21 @@ def _build_profile_text(entreprise: Entreprise) -> str:
 def _active_entreprises(db: Session) -> list[Entreprise]:
     # Le telephone n'est plus requis ici : l'email (canal toujours disponible, adresse deja
     # verifiee a l'activation du compte) prend le relais quand WhatsApp n'est pas configurable.
+    # Abonnement : essai gratuit ou abonnement paye encore valide uniquement (cf.
+    # api/routers/paiement.py) - une entreprise sans essai/abonnement en cours ne doit jamais etre
+    # alertee, meme si ses notifications sont actives.
+    maintenant = datetime.now(timezone.utc)
     return (
         db.query(Entreprise)
         .join(Utilisateur, Entreprise.owner_id == Utilisateur.id)
-        .filter(Utilisateur.notifications_actives.is_(True))
+        .join(Abonnement, Abonnement.entreprise_id == Entreprise.id)
+        .filter(
+            Utilisateur.notifications_actives.is_(True),
+            or_(
+                Abonnement.date_fin_essai > maintenant,
+                and_(Abonnement.statut == "actif", Abonnement.date_fin_abonnement > maintenant),
+            ),
+        )
         .all()
     )
 
@@ -206,6 +237,12 @@ def _envoyer_alerte(
 
 
 def match_and_alert(object_name: str) -> int:
+    # Importe ici (pas au niveau module) pour les memes raisons que `import fitz` dans
+    # _fetch_bulletin_pdf : sentence-transformers/torch sont lourds et indisponibles sur certains
+    # environnements hote (ex. VC++ Redistributable manquant sous Windows) - cette fonction reste
+    # la seule a en avoir reellement besoin dans ce fichier.
+    from ingestion.embed import embed_texts
+
     numero = Path(object_name).stem
     db = SessionLocal()
     nb_alertes = 0
@@ -246,24 +283,22 @@ def match_and_alert(object_name: str) -> int:
                 continue
             profile_vector = np.array(embed_texts([profile_text])[0])
             similarites = marche_vectors_np @ profile_vector
-            idx = int(similarites.argmax())
-            if similarites[idx] < settings.whatsapp_min_match_score:
-                continue
 
-            marche = marches_appel_offre[idx]
-            if _already_alerted(db, entreprise.id, publication.id, marche.id):
-                continue
+            for idx in _selectionner_marches_pertinents(similarites, settings.whatsapp_min_match_score):
+                marche = marches_appel_offre[idx]
+                if _already_alerted(db, entreprise.id, publication.id, marche.id):
+                    continue
 
-            try:
-                resume = resumer_objet(marche.objet)
-            except RedactionEchouee as exc:
-                logger.warning("Redaction WhatsApp echouee pour l'entreprise %s : %s", entreprise.id, exc)
-                continue
+                try:
+                    resume = resumer_objet(marche.objet)
+                except RedactionEchouee as exc:
+                    logger.warning("Redaction WhatsApp echouee pour l'entreprise %s : %s", entreprise.id, exc)
+                    continue
 
-            organisme = marche.ministere or "DGCMEF"
-            page_number = marche.page_number or _locate_page(qdrant_client, object_name, marche_vectors[idx])
-            if _envoyer_alerte(db, entreprise, publication, marche, "marche", resume, organisme, page_number, pdf_doc):
-                nb_alertes += 1
+                organisme = marche.ministere or "DGCMEF"
+                page_number = marche.page_number or _locate_page(qdrant_client, object_name, marche_vectors[idx])
+                if _envoyer_alerte(db, entreprise, publication, marche, "marche", resume, organisme, page_number, pdf_doc):
+                    nb_alertes += 1
     finally:
         db.close()
         if pdf_doc is not None:

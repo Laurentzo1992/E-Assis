@@ -1,27 +1,27 @@
-"""Wrapper centralise pour tous les appels LLM de kbbot, executes localement via Ollama.
+"""Wrapper centralise pour tous les appels LLM de kbbot.
 
 Pattern repris tel quel de fasofoodalert-core/llm_service/llm_client.py (deja en production dans
-ce projet voisin, meme choix d'architecture : Ollama auto-heberge plutot qu'une API payante, pour
-le cout et la souverainete des donnees des entreprises inscrites).
+ce projet voisin, meme choix d'architecture initial : Ollama auto-heberge plutot qu'une API
+payante, pour le cout et la souverainete des donnees des entreprises inscrites).
 
 Tout appel LLM passe par `call_llm()`, qui centralise :
-- la selection du modele par tache (`MODELES_PAR_TACHE`) ;
-- le retry/backoff exponentiel sur les erreurs transitoires (serveur Ollama injoignable, erreurs
-  5xx) - les erreurs non transitoires (modele absent, requete invalide, tache inconnue...) ne sont
-  jamais retentees ;
+- la selection du modele par tache (`_resoudre_modele`) ;
+- le retry/backoff exponentiel sur les erreurs transitoires (serveur injoignable, erreurs 5xx,
+  429 rate-limit) - les erreurs non transitoires (modele absent, requete invalide, tache
+  inconnue...) ne sont jamais retentees ;
 - le logging structure des tokens consommes et de la duree, pour chaque appel reussi.
 
-Modele d'extraction en cours de comparaison reelle sur le bulletin n°4458 (66 sections) :
-- mistral:7b (baseline) : 60 marches, 4 corrections de type_avis, 7 reponses JSON invalides, 4
-  echecs definitifs.
-- mistral-nemo:12b : PIRE que la baseline malgre sa taille superieure - 54 marches, 12 reponses
-  JSON invalides, 8 echecs definitifs (renvoie parfois un objet vide `{}` au lieu du tableau vide
-  `[]` demande par le prompt en cas d'absence d'avis, ce que `_valider_avis` ne gere pas).
-- qwen2.5:14b : en cours d'evaluation.
-`mistral:7b` reste utilise pour la redaction du resume WhatsApp (tache courte, une phrase, ou sa
-qualite suffit deja). Tous les modeles sont deja presents sur l'hote Ollama (`ollama list`), aucun
-telechargement necessaire une fois pulles. Les modeles >7b sont plus lents et plus gourmands en
-VRAM, partagee avec vision-ocr (DeepSeek-OCR) sur le meme GPU.
+100% local via Ollama (GPU partage avec vision-ocr/DeepSeek-OCR). Constate en reel sur le
+bulletin n°4458 (66 sections) : mistral:7b (60 marches, 4 echecs), mistral-nemo:12b apres
+correctif du bug `{}`/`[]` (54 marches, 1 echec - le meilleur des trois testes), qwen2.5:14b
+(48 marches, 4 echecs). Aucun n'est parfait : plusieurs hallucinations reelles constatees malgre
+la consigne explicite de ne jamais inventer, compensees cote deterministe par des filtres
+pre-LLM (cf. api/scripts/extract_bulletin.py, _semble_repertoire_fournisseurs/_semble_trop_courte).
+
+Le 08/08/2026, Gemini et Claude (API cloud) ont ete testes pour reduire ces hallucinations et la
+charge de calcul locale (soupconnee dans plusieurs plantages Docker Desktop le 07/08/2026) - les
+deux abandonnes le jour-meme (quota gratuit Gemini limite a 20 requetes/jour, credit insuffisant
+sur la cle Anthropic testee) et retires de ce fichier. Retour au 100% local.
 """
 
 from __future__ import annotations
@@ -34,6 +34,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+import httpx
 import ollama
 from dotenv import load_dotenv
 
@@ -41,7 +42,7 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-MODELES_PAR_TACHE: dict[str, str] = {
+_MODELES: dict[str, str] = {
     "extraction": "mistral-nemo:12b",
     "redaction_whatsapp": "mistral:7b",
 }
@@ -49,6 +50,14 @@ MODELES_PAR_TACHE: dict[str, str] = {
 # "ollama" = nom du service dans docker-compose.llm.yml (reseau Docker "backend") ; "localhost"
 # suppose un usage depuis l'hote directement.
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+
+# Sans timeout, ollama.Client() (httpx en interne) attend indefiniment - constate en reel sur le
+# bulletin 4462 : une requete bloquee sur la section "COMMUNE DE KOUNDOUGOU" a fige l'extraction
+# pendant plus de 3h, deux fois de suite sur la meme section, sans qu'aucune erreur ne remonte
+# jamais (0% CPU, aucune progression) jusqu'a ce qu'Airflow finisse par tuer la tache comme
+# "zombie". Une requete d'extraction legitime observee jusqu'ici prend au plus ~90s ; 300s laisse
+# une marge confortable tout en bornant le pire cas a des minutes plutot que des heures.
+OLLAMA_TIMEOUT_S = 300.0
 
 DEFAULT_MAX_TOKENS = 4096
 MAX_RETRIES = 4
@@ -66,22 +75,36 @@ class LLMUsage:
 
 
 class TacheInconnue(ValueError):
-    """Levee quand `call_llm()` recoit une `task` absente de `MODELES_PAR_TACHE`."""
+    """Levee quand `call_llm()` recoit une `task` absente des modeles connus."""
 
 
 def _resoudre_modele(task: str) -> str:
     try:
-        return MODELES_PAR_TACHE[task]
+        return _MODELES[task]
     except KeyError:
-        raise TacheInconnue(f"Tache LLM inconnue : {task!r}. Taches disponibles : {sorted(MODELES_PAR_TACHE)}") from None
+        raise TacheInconnue(f"Tache LLM inconnue : {task!r}. Taches disponibles : {sorted(_MODELES)}") from None
 
 
-def _est_erreur_transitoire(exc: Exception) -> bool:
-    if isinstance(exc, ConnectionError):
-        return True
-    if isinstance(exc, ollama.ResponseError):
-        return exc.status_code >= 500
-    return False
+# --- Reponse normalisee -------------------------------------------------------------------------
+# Meme forme (`response.message.content`, `prompt_eval_count`, `eval_count`, `total_duration` en
+# nanosecondes) que celle native d'Ollama, pour qu'extraction_prompts.py/whatsapp_prompts.py -
+# qui ne lisent que ces champs - n'aient jamais besoin de savoir quel client a repondu.
+
+
+@dataclass
+class _Message:
+    content: str | None
+
+
+@dataclass
+class _ReponseNormalisee:
+    message: _Message
+    prompt_eval_count: int = 0
+    eval_count: int = 0
+    total_duration: int = 0  # nanosecondes, comme Ollama
+
+
+# --- Ollama ---------------------------------------------------------------------------------
 
 
 _client_singleton: ollama.Client | None = None
@@ -90,8 +113,39 @@ _client_singleton: ollama.Client | None = None
 def _get_default_client() -> ollama.Client:
     global _client_singleton
     if _client_singleton is None:
-        _client_singleton = ollama.Client(host=OLLAMA_HOST)
+        _client_singleton = ollama.Client(host=OLLAMA_HOST, timeout=OLLAMA_TIMEOUT_S)
     return _client_singleton
+
+
+def _est_erreur_transitoire(exc: Exception) -> bool:
+    if isinstance(exc, ConnectionError):
+        return True
+    # httpx.TimeoutException/TransportError : ce que leve reellement le client (httpx en interne)
+    # sur un depassement de OLLAMA_TIMEOUT_S ou une connexion coupee - une requete qui prenait
+    # simplement plus longtemps que d'habitude doit pouvoir etre retentee comme n'importe quelle
+    # autre erreur reseau transitoire, pas traitee comme un echec definitif.
+    if isinstance(exc, httpx.TimeoutException | httpx.TransportError):
+        return True
+    if isinstance(exc, ollama.ResponseError):
+        return exc.status_code >= 500
+    return False
+
+
+def _appeler_ollama(
+    model: str, full_messages: list[dict[str, Any]], max_tokens: int, client: ollama.Client | None, **kwargs: Any
+) -> _ReponseNormalisee:
+    ollama_client = client if client is not None else _get_default_client()
+    options = {"num_predict": max_tokens, **kwargs.pop("options", {})}
+    response = ollama_client.chat(model=model, messages=full_messages, options=options, **kwargs)
+    return _ReponseNormalisee(
+        message=_Message(content=response.message.content),
+        prompt_eval_count=getattr(response, "prompt_eval_count", 0) or 0,
+        eval_count=getattr(response, "eval_count", 0) or 0,
+        total_duration=getattr(response, "total_duration", 0) or 0,
+    )
+
+
+# --- Point d'entree unique --------------------------------------------------------------------
 
 
 def call_llm(
@@ -102,31 +156,21 @@ def call_llm(
     max_tokens: int = DEFAULT_MAX_TOKENS,
     client: ollama.Client | None = None,
     **kwargs: Any,
-) -> Any:
+) -> _ReponseNormalisee:
     """Point d'entree unique pour tout appel LLM dans kbbot.
 
-    `client` permet d'injecter un client Ollama (ou un mock dans les tests) - sinon un client
-    singleton est construit depuis `OLLAMA_HOST`.
+    `client` permet d'injecter un client Ollama (ou un mock dans les tests). La reponse est
+    toujours une `_ReponseNormalisee` (`response.message.content`).
     """
     model = _resoudre_modele(task)
-    ollama_client = client if client is not None else _get_default_client()
-
-    full_messages = list(messages)
-    if system is not None:
-        full_messages = [{"role": "system", "content": system}, *full_messages]
-
-    options = {"num_predict": max_tokens, **kwargs.pop("options", {})}
-    chat_kwargs: dict[str, Any] = {
-        "model": model,
-        "messages": full_messages,
-        "options": options,
-        **kwargs,
-    }
 
     last_exc: Exception | None = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = ollama_client.chat(**chat_kwargs)
+            full_messages = list(messages)
+            if system is not None:
+                full_messages = [{"role": "system", "content": system}, *full_messages]
+            response = _appeler_ollama(model, full_messages, max_tokens, client, **kwargs)
         except Exception as exc:
             last_exc = exc
             if not _est_erreur_transitoire(exc) or attempt == MAX_RETRIES:
@@ -137,7 +181,8 @@ def call_llm(
                 raise
             delay = min(BASE_DELAY_S * (2 ** (attempt - 1)) + random.uniform(0, 1), MAX_DELAY_S)
             logger.warning(
-                "Erreur transitoire LLM (tache=%s, modele=%s, tentative=%d/%d) - nouvelle tentative dans %.1fs : %s",
+                "Erreur transitoire LLM (tache=%s, modele=%s, tentative=%d/%d) - "
+                "nouvelle tentative dans %.1fs : %s",
                 task, model, attempt, MAX_RETRIES, delay, exc,
             )
             time.sleep(delay)
@@ -146,9 +191,9 @@ def call_llm(
         usage = LLMUsage(
             task=task,
             model=model,
-            input_tokens=getattr(response, "prompt_eval_count", 0) or 0,
-            output_tokens=getattr(response, "eval_count", 0) or 0,
-            duree_ms=(getattr(response, "total_duration", 0) or 0) / 1_000_000,
+            input_tokens=response.prompt_eval_count,
+            output_tokens=response.eval_count,
+            duree_ms=response.total_duration / 1_000_000,
         )
         logger.info(
             "Appel LLM reussi (tache=%s, modele=%s, input_tokens=%d, output_tokens=%d, duree_ms=%.1f)",

@@ -5,7 +5,7 @@ validation Pydantic stricte (pas de EmailStr, pas de champs requis) : DRF renvoi
 validation comme un dict `{"champ": ["message"]}` non enveloppe, une forme que l'auto-422 de
 FastAPI/Pydantic ne produit pas. Les routers valident donc ces champs a la main et renvoient une
 JSONResponse dans le meme format que l'API DRF existante (compatibilite stricte avec
-frontend-2), plutot que de laisser Pydantic rejeter la requete avec sa propre forme d'erreur.
+frontend), plutot que de laisser Pydantic rejeter la requete avec sa propre forme d'erreur.
 """
 
 from datetime import datetime
@@ -23,10 +23,6 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str | None = None
     password: str | None = None
-
-
-class MessageResponse(BaseModel):
-    message: str
 
 
 class TokenPairResponse(BaseModel):

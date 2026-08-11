@@ -17,6 +17,12 @@ Revise apres un premier run reel sur le bulletin n°4456 (310 avis extraits, ~90
   "demande_prix"...) avant validation, en plus d'exemples ajoutes au prompt.
 - `format="json"` force la sortie JSON native d'Ollama (evite les guillemets simples/texte
   parasite qui causaient ~15% des echecs).
+
+Champs RCCM/IFU/telephone de l'attributaire ajoutes pour fiabiliser le rapprochement avec une
+Entreprise inscrite (cf. api/scripts/extract_bulletin.py, `_find_entreprise_attributaire`) - un nom
+seul se preterait a des correspondances approximatives (deux entreprises au nom proche), alors
+qu'un RCCM ou un IFU identique est une preuve quasi certaine. Rarement presents dans le texte reel
+d'un resultat DGCMEF, mais utilises en priorite sur le nom quand ils le sont.
 """
 
 from __future__ import annotations
@@ -55,6 +61,9 @@ Reponds UNIQUEMENT avec un tableau JSON valide (aucun texte avant/apres, aucun b
   "montant_max": number | null,
   "date_avis": string | null,       // date pertinente (ouverture, publication...), ISO 8601 AAAA-MM-JJ
   "entreprise_attributaire_nom": string | null,  // uniquement si type_avis == "resultat" et un attributaire est nomme
+  "entreprise_attributaire_rccm": string | null, // numero RCCM de l'attributaire, UNIQUEMENT si explicitement ecrit dans le texte
+  "entreprise_attributaire_ifu": string | null,  // numero IFU (identifiant financier unique) de l'attributaire, UNIQUEMENT si explicitement ecrit
+  "entreprise_attributaire_telephone": string | null, // telephone de l'attributaire, UNIQUEMENT si explicitement ecrit
   "montant_attribue": number | null               // uniquement si type_avis == "resultat"
 }
 
@@ -69,6 +78,12 @@ d'une date - dans ces cas, mets null.
 
 "montant_attribue"/"montant_min"/"montant_max" doivent etre des nombres en FCFA, jamais un numero
 de telephone ou une reference.
+
+"entreprise_attributaire_rccm", "entreprise_attributaire_ifu" et "entreprise_attributaire_telephone"
+ne sont presque jamais presents dans le texte d'un resultat (le nom seul suffit generalement) -
+laisse-les a null par defaut, ne les remplis QUE si le numero exact apparait litteralement dans le
+texte a cote du nom de l'attributaire. Ne confonds jamais un numero de reference de marche
+(N°2026-xxx/...) avec un RCCM ou un IFU.
 
 Si le texte ne decrit aucun avis de marche exploitable, reponds avec un tableau vide : []
 Ne devine jamais une valeur (organisme, montant, date...) qui n'est pas explicitement dans le texte."""
@@ -90,6 +105,9 @@ class AvisExtrait(BaseModel):
     montant_max: float | None = None
     date_avis: str | None = None
     entreprise_attributaire_nom: str | None = None
+    entreprise_attributaire_rccm: str | None = None
+    entreprise_attributaire_ifu: str | None = None
+    entreprise_attributaire_telephone: str | None = None
     montant_attribue: float | None = None
 
 

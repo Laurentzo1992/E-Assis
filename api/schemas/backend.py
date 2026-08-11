@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
-from api.schemas.entreprise import DomaineResponse, EntrepriseResponse
+from api.schemas.entreprise import EntrepriseResponse
 
 
 class TypeProcedureResponse(BaseModel):
@@ -25,7 +25,6 @@ class PublicationResponse(BaseModel):
     date_publication: date
     source: str
     type_publication: str | None
-    domaines: list[DomaineResponse]
 
     model_config = {"from_attributes": True}
 
@@ -37,7 +36,6 @@ class PublicationCreateUpdateRequest(BaseModel):
     source: str | None = None
     source_url: str | None = None
     type_publication: str | None = None
-    domaine_ids: list[int] = []
 
 
 class LotResponse(BaseModel):
@@ -66,6 +64,7 @@ class MarcheResponse(BaseModel):
     objet: str
     budget_min: Decimal | None
     budget_max: Decimal | None
+    page_number: int | None
     lots: list[LotResponse]
 
     model_config = {"from_attributes": True}
@@ -104,6 +103,10 @@ class AppelOffreCreateUpdateRequest(MarcheCreateUpdateRequest):
 class ResultatResponse(BaseModel):
     marche: MarcheResponse
     date_attribution: date | None
+    # Nom brut extrait du bulletin - toujours renseigne des que le texte nomme un attributaire,
+    # meme quand celui-ci n'est pas un client inscrit sur la plateforme (cf. entreprise_attributaire
+    # ci-dessous, qui reste None dans ce cas).
+    entreprise_attributaire_nom: str | None
     entreprise_attributaire: EntrepriseResponse | None
     montant_attribue: Decimal | None
     reference_decision: str | None
@@ -117,6 +120,7 @@ class ResultatResponse(BaseModel):
 class ResultatCreateUpdateRequest(BaseModel):
     marche_id: int | None = None
     date_attribution: date | None = None
+    entreprise_attributaire_nom: str | None = None
     entreprise_attributaire_id: int | None = None
     montant_attribue: Decimal | None = None
     reference_decision: str | None = None
@@ -125,28 +129,17 @@ class ResultatCreateUpdateRequest(BaseModel):
     motif_rejet_autres_offres: str | None = None
 
 
-class PublicationDomaineResponse(BaseModel):
-    id: int
-    publication_id: int
-    domaine_id: int
-
-    model_config = {"from_attributes": True}
-
-
-class PublicationDomaineCreateUpdateRequest(BaseModel):
-    publication_id: int | None = None
-    domaine_id: int | None = None
-
-
 class AlerteResponse(BaseModel):
     id: int
     entreprise: EntrepriseResponse
     publication: PublicationResponse
     marche_id: int | None
+    marche: MarcheResponse | None
     type_alerte: str
     date_alerte: datetime
     contenu_alerte: str
     canal_alerte: str
+    lu: bool
 
     model_config = {"from_attributes": True}
 

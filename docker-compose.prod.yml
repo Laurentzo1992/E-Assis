@@ -1,0 +1,165 @@
+# Configuration de production - fichier autonome (pas une surcouche de docker-compose.yml, pour
+# eviter toute ambiguite de fusion YAML entre versions de Docker Compose). Usage sur le VPS :
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Differences avec le dev local (docker-compose.yml) :
+#   - frontend : build de production statique (nginx) au lieu du serveur de developpement npm start
+#   - api/postgres/qdrant : aucun port publie sur l'hote - uniquement joignables depuis le reseau
+#     Docker interne (Caddy est le seul point d'entree public). minio reste publie : les URL
+#     presignees de telechargement de PDF sont recuperees directement par le navigateur du
+#     visiteur, jamais via l'API/Caddy.
+#   - caddy : reverse-proxy avec HTTPS automatique (Let's Encrypt) devant frontend + api
+#   - ollama : ajoute en CPU (pas de GPU sur ce VPS - extraction plus lente qu'en local, cf.
+#     llm_service/llm_client.py, mais fonctionnelle). Penser a lancer une fois apres le premier
+#     demarrage : docker exec kbbot-ollama ollama pull mistral:7b
+#
+# Non couvert ici (a decider separement) :
+#   - vision-ocr (fallback OCR des PDF scannes) exige un GPU NVIDIA, absent de ce fichier. Si
+#     DGCMEF publie surtout des PDF numeriques (pas des scans), l'impact reste limite - a confirmer
+#     en observant les echecs d'extraction une fois en production.
+
+services:
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z
+    container_name: kbbot-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: kbbot-qdrant
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - backend
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: kbbot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: kbbot-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_model_cache:/root/.ollama
+    networks:
+      - backend
+
+  frontend:
+    image: kbbot-frontend:prod
+    pull_policy: build
+    build:
+      context: frontend
+      dockerfile: Dockerfile.prod
+      args:
+        REACT_APP_API_URL: https://kbot.logo-services.com
+    container_name: kbbot-frontend
+    restart: unless-stopped
+    networks:
+      - backend
+
+  api:
+    image: kbbot-api:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: kbbot-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  ingest:
+    image: kbbot-ingest:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile.ingest
+    container_name: kbbot-ingest
+    depends_on:
+      - qdrant
+      - minio
+      - postgres
+    env_file:
+      - .env
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      VISION_OCR_URL: http://vision-ocr:8000
+      MINIO_ENDPOINT: minio:9000
+      OLLAMA_HOST: http://ollama:11434
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    volumes:
+      - .:/app
+      - ingest_model_cache:/root/.cache
+    networks:
+      - backend
+    profiles:
+      - tools
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: kbbot-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  minio_data:
+  qdrant_data:
+  postgres_data:
+  ollama_model_cache:
+  ingest_model_cache:
+  caddy_data:
+  caddy_config:
