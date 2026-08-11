@@ -1,6 +1,12 @@
 # Configuration de production - fichier autonome (pas une surcouche de docker-compose.yml, pour
-# eviter toute ambiguite de fusion YAML entre versions de Docker Compose). Usage sur le VPS :
-#   docker compose -f docker-compose.prod.yml up -d --build
+# eviter toute ambiguite de fusion YAML entre versions de Docker Compose). Deux facons de deployer,
+# au choix sur le VPS :
+#   - CI/CD (recommande) : .github/workflows/build-and-push.yml construit les images sur GitHub a
+#     chaque push sur main et les publie sur GHCR - le VPS n'a plus qu'a les recuperer :
+#       docker compose -f docker-compose.prod.yml pull
+#       docker compose -f docker-compose.prod.yml up -d
+#   - Build local sur le VPS (plus simple a mettre en place, plus lent a chaque deploiement) :
+#       docker compose -f docker-compose.prod.yml up -d --build
 #
 # Differences avec le dev local (docker-compose.yml) :
 #   - frontend : build de production statique (nginx) au lieu du serveur de developpement npm start
@@ -78,8 +84,7 @@ services:
       - backend
 
   frontend:
-    image: kbbot-frontend:prod
-    pull_policy: build
+    image: ghcr.io/laurentzo1992/kbbot-frontend:latest
     build:
       context: frontend
       dockerfile: Dockerfile.prod
@@ -91,8 +96,7 @@ services:
       - backend
 
   api:
-    image: kbbot-api:local
-    pull_policy: build
+    image: ghcr.io/laurentzo1992/kbbot-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -109,8 +113,7 @@ services:
       - backend
 
   ingest:
-    image: kbbot-ingest:local
-    pull_policy: build
+    image: ghcr.io/laurentzo1992/kbbot-ingest:latest
     build:
       context: .
       dockerfile: Dockerfile.ingest
