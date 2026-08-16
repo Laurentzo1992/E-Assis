@@ -1,5 +1,11 @@
-"""Abonnement annuel par entreprise : essai gratuit a la creation (cf. api/routers/entreprise.py,
-create_entreprise), puis paiement via CinetPay pour continuer au-dela.
+"""Abonnement annuel PAR COMPTE (pas par entreprise, cf. api/models/abonnement.py) : essai gratuit
+a la creation de la premiere entreprise (cf. api/routers/entreprise.py, create_entreprise), puis
+paiement via CinetPay pour continuer au-dela - couvre alors toutes les entreprises du compte.
+
+`entreprise_id` reste dans les URL/payloads de ce module pour verifier que l'appelant a bien le
+droit d'agir (l'entreprise lui appartient) et pour le contexte de la page de retour CinetPay, mais
+l'abonnement resolu et modifie est toujours celui, partage, du proprietaire du compte - jamais un
+abonnement par entreprise.
 
 Le webhook (`/webhook/`) est le seul endpoint de ce module SANS authentification - c'est CinetPay
 qui l'appelle, pas un utilisateur connecte. Il ne fait jamais confiance au contenu du webhook lui-
@@ -30,12 +36,19 @@ router = APIRouter(prefix="/api/paiement")
 
 
 def _get_owned_abonnement_or_404(db: Session, current_user: Utilisateur, entreprise_id: int) -> Abonnement:
-    abonnement = (
-        db.query(Abonnement)
-        .join(Entreprise, Entreprise.id == Abonnement.entreprise_id)
-        .filter(Entreprise.id == entreprise_id, Entreprise.owner_id == current_user.id)
-        .one_or_none()
+    """`entreprise_id` ne sert qu'a verifier que l'appelant a bien le droit d'agir (l'entreprise
+    lui appartient) - l'abonnement retourne est celui, PARTAGE, du proprietaire du compte, jamais
+    un abonnement propre a cette entreprise (cf. docstring de module)."""
+    entreprise_appartient = (
+        db.query(Entreprise).filter(Entreprise.id == entreprise_id, Entreprise.owner_id == current_user.id).first()
+        is not None
     )
+    if not entreprise_appartient:
+        raise HTTPException(status_code=404, detail="Not found.")
+    # .first() plutot que .one_or_none() : des comptes crees avant le passage a un abonnement par
+    # compte (13/08/2026) peuvent temporairement avoir plusieurs lignes Abonnement heritees de
+    # l'ancien modele par entreprise, le temps d'etre consolidees manuellement depuis /admin.
+    abonnement = db.query(Abonnement).filter(Abonnement.utilisateur_id == current_user.id).first()
     if abonnement is None:
         raise HTTPException(status_code=404, detail="Not found.")
     return abonnement
@@ -93,9 +106,12 @@ def initier(
     db: Session = Depends(get_db),
 ):
     abonnement = _get_owned_abonnement_or_404(db, current_user, payload.entreprise_id)
+    # Deja verifiee appartenir a current_user par _get_owned_abonnement_or_404 - juste pour un
+    # libelle de paiement lisible cote CinetPay, sans rapport avec la resolution de l'abonnement.
+    entreprise = db.get(Entreprise, payload.entreprise_id)
     tarif = get_tarif(db)
 
-    reference = f"kbbot-{abonnement.entreprise_id}-{uuid.uuid4().hex[:12]}"
+    reference = f"kbbot-{current_user.id}-{uuid.uuid4().hex[:12]}"
     paiement = Paiement(
         abonnement_id=abonnement.id,
         reference=reference,
@@ -113,12 +129,13 @@ def initier(
             reference=reference,
             montant=str(tarif.prix_annuel),
             devise=tarif.devise,
-            description=f"Abonnement annuel Veille Marches - {abonnement.entreprise.nom}",
+            description=f"Abonnement annuel Veille Marches - {entreprise.nom}",
             notify_url=f"{settings.api_public_domain}/api/paiement/webhook/",
             # entreprise_id en query string : la page de retour n'a pas d'autre moyen de savoir
-            # quel abonnement rafraichir (CinetPay ne renvoie que sa propre reference de
-            # transaction sur l'URL de retour, jamais nos donnees metier).
-            return_url=f"{settings.frontend_domain}/paiement/retour?entreprise_id={abonnement.entreprise_id}",
+            # quelle entreprise etait active au moment du paiement (CinetPay ne renvoie que sa
+            # propre reference de transaction sur l'URL de retour, jamais nos donnees metier) -
+            # l'abonnement rafraichi couvre tout le compte, pas seulement cette entreprise.
+            return_url=f"{settings.frontend_domain}/paiement/retour?entreprise_id={payload.entreprise_id}",
         )
     except PaiementError as exc:
         paiement.statut = "echoue"
@@ -138,7 +155,14 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
     except Exception:
         reference = None
     if reference is None:
-        body = await request.json()
+        # form() a deja consomme le flux du corps de la requete : si le champ y etait absent
+        # (plutot qu'en echec de parsing), retenter .json() leve RuntimeError("Stream consumed")
+        # au lieu de renvoyer un corps JSON vide - a capturer ici pour ne jamais faire planter le
+        # webhook en 500 sur un simple champ manquant.
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
         reference = body.get("cpm_trans_id") or body.get("transaction_id")
 
     if not reference:
@@ -175,4 +199,7 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
     abonnement.statut = "actif"
 
     db.commit()
-    logger.info("Paiement confirme, abonnement prolonge jusqu'au %s (entreprise=%s)", abonnement.date_fin_abonnement, abonnement.entreprise_id)
+    logger.info(
+        "Paiement confirme, abonnement prolonge jusqu'au %s (utilisateur=%s)",
+        abonnement.date_fin_abonnement, abonnement.utilisateur_id,
+    )

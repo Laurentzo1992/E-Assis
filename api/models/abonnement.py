@@ -1,9 +1,17 @@
-"""Abonnement annuel par entreprise : essai gratuit a la creation, puis paiement pour continuer.
+"""Abonnement annuel PAR COMPTE (Utilisateur), pas par entreprise : essai gratuit a la creation
+de la premiere entreprise, puis paiement pour continuer - couvre alors TOUTES les entreprises du
+compte, jusqu'a MAX_ENTREPRISES_PAR_ABONNEMENT (cf. api/routers/entreprise.py). Revise le 13/08/2026
+suite a un constat reel : un meme gerant (compte "vuneemtech@gmail.com") avec deux entreprises
+("LOGO SERVICES" et "VTECH") se retrouvait avec deux abonnements independants, chacun avec son
+propre essai de 30 jours reparti a chaque nouvelle entreprise - un abonnement doit couvrir le
+gerant, pas chaque societe qu'il declare separement.
 
-Un seul `Abonnement` par entreprise (cf. contrainte unique sur entreprise_id) - pas d'historique de
-plans multiples, juste un statut courant et ses dates de validite. Chaque paiement reussi prolonge
-`date_fin_abonnement` d'un an a partir de la date la plus tardive entre "maintenant" et l'ancienne
-date de fin (un renouvellement anticipe n'est jamais perdu).
+Un seul `Abonnement` par Utilisateur (viser une contrainte unique sur utilisateur_id - pas encore
+imposee en base le temps de laisser consolider manuellement les doublons herites de l'ancien
+modele par-entreprise, cf. api/alembic/versions/o5p6q7r8s9t0_abonnement_par_utilisateur.py) - pas
+d'historique de plans multiples, juste un statut courant et ses dates de validite. Chaque paiement
+reussi prolonge `date_fin_abonnement` d'un an a partir de la date la plus tardive entre
+"maintenant" et l'ancienne date de fin (un renouvellement anticipe n'est jamais perdu).
 """
 
 from datetime import datetime
@@ -16,7 +24,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from api.database import Base
 
 if TYPE_CHECKING:
-    from api.models.entreprise import Entreprise
+    from api.models.utilisateur import Utilisateur
 
 # "essai" : periode d'essai gratuite en cours (date_fin_essai dans le futur).
 # "actif" : abonnement paye en cours (date_fin_abonnement dans le futur).
@@ -30,19 +38,17 @@ class Abonnement(Base):
     __tablename__ = "abonnements"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    entreprise_id: Mapped[int] = mapped_column(
-        ForeignKey("entreprises.id", ondelete="CASCADE"), unique=True
-    )
+    utilisateur_id: Mapped[int] = mapped_column(ForeignKey("utilisateurs.id", ondelete="CASCADE"))
     statut: Mapped[str] = mapped_column(String(20), default="essai")
     date_debut_essai: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     date_fin_essai: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     date_fin_abonnement: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    entreprise: Mapped["Entreprise"] = relationship()
+    utilisateur: Mapped["Utilisateur"] = relationship()
     paiements: Mapped[list["Paiement"]] = relationship(back_populates="abonnement", order_by="Paiement.date_creation.desc()")
 
     def __str__(self) -> str:
-        return f"Abonnement {self.entreprise} ({self.statut})"
+        return f"Abonnement {self.utilisateur} ({self.statut})"
 
 
 class Paiement(Base):

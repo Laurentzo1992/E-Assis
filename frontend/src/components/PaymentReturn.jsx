@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams, Link } from "react-router-dom";
 import { apiRequest } from "../services/auth";
 import { API_BASE_URL } from "../config";
 import "../style.css";
+
+// Locale de formatage de date : le mooré n'a pas de locale Intl dediee, on retombe sur le
+// francais (repli raisonnable, meme convention que GOOGLE_LOCALES dans Inscription.jsx).
+const DATE_LOCALES = { fr: "fr-FR", en: "en-US", mos: "fr-FR" };
 
 // Page affichee au retour de la page de paiement hebergee CinetPay (return_url, cf.
 // api/routers/paiement.py). CinetPay confirme le paiement de son cote via un webhook
@@ -10,6 +15,7 @@ import "../style.css";
 // navigateur - impossible de garantir que l'abonnement soit deja marque "actif" au moment ou
 // cette page s'affiche, d'ou le statut "en_attente" ci-dessous plutot qu'une affirmation ferme.
 export default function PaymentReturn() {
+  const { t, i18n } = useTranslation();
   const [searchParams] = useSearchParams();
   const entrepriseId = searchParams.get("entreprise_id");
 
@@ -20,7 +26,7 @@ export default function PaymentReturn() {
   useEffect(() => {
     const fetchAbonnement = async () => {
       if (!entrepriseId) {
-        setError("Identifiant d'entreprise manquant dans l'URL de retour.");
+        setError(t("paymentReturn.missingEntreprise"));
         setLoading(false);
         return;
       }
@@ -38,35 +44,35 @@ export default function PaymentReturn() {
       }
     };
     fetchAbonnement();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entrepriseId]);
 
   return (
     <div className="d-flex align-items-center justify-content-center" style={{ minHeight: "100vh", background: "#f8f9ff" }}>
       <div className="card shadow-sm" style={{ maxWidth: "480px", width: "100%" }}>
         <div className="card-body p-4 text-center">
-          <h3 className="titleColor mb-3">Retour du paiement</h3>
+          <h3 className="titleColor mb-3">{t("paymentReturn.title")}</h3>
 
           {loading ? (
-            <p className="text-muted">Vérification du statut de votre abonnement...</p>
+            <p className="text-muted">{t("paymentReturn.loading")}</p>
           ) : error ? (
             <div className="alert alert-warning">
-              Impossible de vérifier le statut pour le moment : {error}. Si le paiement a bien
-              été effectué, il sera pris en compte dès sa confirmation par notre système.
+              {t("paymentReturn.errorPrefix", { error })}
             </div>
           ) : statut.statut === "actif" ? (
             <div className="alert alert-success">
-              Paiement confirmé ! Votre abonnement est actif jusqu'au{" "}
-              {new Date(statut.date_fin_abonnement).toLocaleDateString("fr-FR")}.
+              {t("paymentReturn.successPrefix", {
+                date: new Date(statut.date_fin_abonnement).toLocaleDateString(
+                  DATE_LOCALES[i18n.language] || "fr-FR"
+                ),
+              })}
             </div>
           ) : (
-            <div className="alert alert-info">
-              Votre paiement est en cours de confirmation. Cela peut prendre quelques instants -
-              revenez sur votre tableau de bord dans un moment pour voir le statut mis à jour.
-            </div>
+            <div className="alert alert-info">{t("paymentReturn.pending")}</div>
           )}
 
           <Link className="btn btn-cta w-100 mt-2" to="/Dashboard">
-            Retour au tableau de bord
+            {t("paymentReturn.backToDashboard")}
           </Link>
         </div>
       </div>

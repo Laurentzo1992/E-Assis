@@ -96,16 +96,20 @@ class EntrepriseAdmin(ModelView, model=Entreprise):
 class AbonnementAdmin(ModelView, model=Abonnement):
     category = "Abonnements"
     column_list = [
-        Abonnement.id, Abonnement.entreprise, Abonnement.statut, Abonnement.date_fin_essai,
+        Abonnement.id, Abonnement.utilisateur, Abonnement.statut, Abonnement.date_fin_essai,
         Abonnement.date_fin_abonnement,
     ]
-    # Un essai est cree automatiquement a la creation de l'entreprise (cf. api/routers/entreprise.py) -
-    # en creer un second via l'admin romprait la contrainte d'unicite sur entreprise_id.
+    # Un essai est cree automatiquement a la creation de la premiere entreprise d'un compte (cf.
+    # api/routers/entreprise.py) - en creer un second via l'admin romprait le principe "un
+    # abonnement par compte" (pas encore une contrainte unique en base, cf.
+    # api/models/abonnement.py, le temps de la migration du 13/08/2026).
     can_create = False
-    # Le seul champ qu'un admin doit modifier a la main est le statut/la date de fin (ex. acces
-    # accorde manuellement en attendant CinetPay) - laisser can_delete=False pour ne jamais priver
-    # une entreprise de tout abonnement (le join dans match_and_alert.py suppose sa presence).
-    can_delete = False
+    # can_delete=True (contrairement a avant le passage a un abonnement par compte) : necessaire
+    # pour consolider a la main les doublons herites de l'ancien modele par entreprise (un compte
+    # avec plusieurs entreprises peut temporairement avoir plusieurs lignes Abonnement) - garder
+    # au moins une ligne par compte actif, sinon ses entreprises redeviennent inegibles aux
+    # alertes (cf. api/scripts/match_and_alert.py, _conditions_eligibilite).
+    can_delete = True
 
 
 class PaiementAdmin(ModelView, model=Paiement):

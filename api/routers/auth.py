@@ -127,7 +127,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     db.refresh(user)
 
     activation_link = f"{settings.frontend_domain}/verification/{user.activation_token}"
-    send_activation_email(user.email, activation_link)
+    send_activation_email(user.email, activation_link, langue=user.langue)
 
     return {"message": "Utilisateur créé. Vérifiez votre email pour activer votre compte."}
 
@@ -185,7 +185,7 @@ def update_profile(
     current_user: Utilisateur = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    for field in ("repnom", "repprenom", "telephone", "notifications_actives"):
+    for field in ("repnom", "repprenom", "telephone", "notifications_actives", "langue"):
         value = getattr(payload, field)
         if value is not None:
             setattr(current_user, field, value)
@@ -270,7 +270,7 @@ def reset_password_request(payload: ResetPasswordRequestRequest, db: Session = D
         uidb64, token = create_uid_token(user.id, _RESET_PURPOSE, _RESET_LIFETIME)
         reset_url = f"{settings.frontend_domain}/reset-password-confirm/{uidb64}/{token}/"
         user_name = f"{user.repprenom} {user.repnom}".strip() or user.email
-        send_password_reset_email(user.email, user_name, reset_url)
+        send_password_reset_email(user.email, user_name, reset_url, langue=user.langue)
 
     # Ne revele jamais si l'email existe ou non (meme comportement que la vue Django d'origine).
     return {"message": "Si votre adresse email est valide, un lien de réinitialisation vous a été envoyé."}

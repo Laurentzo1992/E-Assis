@@ -3,7 +3,11 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# --legacy-peer-deps : i18next 26.x declare un peerOptional typescript ^5-7 (support de
+# l'inference de types), en conflit avec le typescript ^3-4 attendu par react-scripts 5.0.1 (CRA,
+# pas de TypeScript utilise dans ce projet - le conflit ne porte que sur cette dependance
+# transitive, jamais executee) - conflit connu et sans consequence dans l'ecosysteme CRA.
+RUN npm ci --legacy-peer-deps
 
 COPY . .
 

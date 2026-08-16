@@ -1,0 +1,93 @@
+<!-- Traduction moore best-effort, a faire valider par un locuteur natif -->
+<!DOCTYPE html>
+<html lang="mos">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sɩɩb-konto</title>
+  <style>
+    body {
+      background-color: #f4f4f7;
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      color: #333;
+    }
+    .email-wrapper {
+      width: 100%;
+      padding: 20px;
+      background-color: #f4f4f7;
+    }
+    .email-content {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      background-color: #0d6efd;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .body {
+      padding: 20px;
+      text-align: center;
+    }
+    .body p {
+      font-size: 16px;
+      margin-bottom: 20px;
+      color: #555;
+    }
+    .activation-btn {
+      display: inline-block;
+      padding: 12px 24px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #0d6efd;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .footer {
+      text-align: center;
+      padding: 15px;
+      font-size: 12px;
+      color: #888;
+    }
+    @media (max-width: 600px) {
+      .body p {
+        font-size: 14px;
+      }
+      .activation-btn {
+        font-size: 14px;
+        padding: 10px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-content">
+      <div class="header">
+        <h1>Bark-woto E-Assis pʋgẽ</h1>
+      </div>
+      <div class="body">
+        <p>Ne-y sõma {{ user_email }},</p>
+        <p>Barka fo sẽn sɩɩs-y d zĩ-kãnga zutu.</p>
+        <p>Yɩɩd-y bʋgd-kãnga zugu n na n sɩɩb fo konto:</p>
+        <a href="{{ activation_link }}" class="activation-btn">Sɩɩb mam konto</a>
+      </div>
+      <div class="footer">
+        <p>Fo sã n ka me konto ye, bas-y koɛɛg-kãnga tɩ kẽ.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

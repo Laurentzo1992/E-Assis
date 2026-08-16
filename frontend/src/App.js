@@ -5,6 +5,7 @@ import Connexion from "./components/Connexion";
 import Dashboard from "./components/Dashboard";
 import EmailVerificationSent from "./components/EmailVerificationSent";
 import ActivateAccount from "./components/ActivateAccount";
+import ResetPasswordConfirm from "./components/ResetPasswordConfirm";
 import PaymentReturn from "./components/PaymentReturn";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/email-verification-sent" element={<EmailVerificationSent />} />
         <Route path="/verification/:token" element={<ActivateAccount />} />
+        <Route path="/reset-password-confirm/:uidb64/:token" element={<ResetPasswordConfirm />} />
         <Route path="/paiement/retour" element={<PaymentReturn />} />
       </Routes>
     </Router>

@@ -92,7 +92,7 @@ def is_refresh_token_revoked(db: Session, jti: str) -> bool:
 
 
 def create_uid_token(user_id: int, purpose: str, lifetime: timedelta) -> tuple[str, str]:
-    """Equivalent du couple (uidb64, token) de Django (urlsafe_base64_encode +
+    """Equivalent du couple (uidb64, token)  (urlsafe_base64_encode +
     default_token_generator), utilise pour les liens de reinitialisation de mot de passe et de
     verification d'email - stateless, pas de stockage en base."""
     uidb64 = base64.urlsafe_b64encode(str(user_id).encode()).decode().rstrip("=")

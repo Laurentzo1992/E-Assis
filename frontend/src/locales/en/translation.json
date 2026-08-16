@@ -1,0 +1,389 @@
+{
+  "common": {
+    "envoyer": "Send",
+    "retour": "Back",
+    "chargement": "Loading...",
+    "mooreAvertissement": "Automatic translation, not reviewed by a native speaker",
+    "languageLabel": "Language",
+    "languages": {
+      "fr": "Français",
+      "en": "English",
+      "mos": "Mooré"
+    }
+  },
+  "nav": {
+    "brand": "Veille Marchés",
+    "tarifs": "Pricing",
+    "connexion": "Log in",
+    "inscription": "Sign up",
+    "toggleNavigation": "Toggle navigation"
+  },
+  "landing": {
+    "hero": {
+      "title": "Never miss another public tender opportunity in Burkina Faso",
+      "subtitle": "The secure, reliable, ultra-fast platform that scans, sorts, and alerts you in real time",
+      "cta": "Start my monitoring",
+      "trialNote": "30-day free trial — no credit card required"
+    },
+    "pricing": {
+      "title": "Simple pricing, per company",
+      "subtitle": "Try it for free, then continue with a straightforward annual subscription.",
+      "freeTrial": {
+        "title": "Free trial",
+        "daysValue": "{{count}} days",
+        "note": "No commitment, no credit card",
+        "cta": "Start for free"
+      },
+      "annual": {
+        "title": "Annual subscription",
+        "perCompanyPerYear": "per company, per year",
+        "cta": "Start my trial"
+      },
+      "paymentNote": "Secure payment via Mobile Money (Orange Money, Moov Money) or credit card.",
+      "seeDetails": "See the full list of included benefits"
+    },
+    "mission": {
+      "title": "Our mission",
+      "text": "We make it easier for Burkinabe companies to access public tenders, by delivering clear, targeted, and accessible tender notices in real time."
+    },
+    "vision": {
+      "title": "Our vision",
+      "text": "Increase the number of opportunities for every company in Burkina Faso, by making each tender accessible in a single click."
+    },
+    "features": {
+      "title": "Why choose our solution?",
+      "security": {
+        "title": "Data security",
+        "description": "Your information is protected with high standards and encrypted storage."
+      },
+      "monitoring": {
+        "title": "Automatic monitoring",
+        "description": "An intelligent system watches for opportunities on your behalf, based on your personalized criteria."
+      },
+      "stats": {
+        "title": "Statistics & alerts",
+        "description": "Visualize trends, receive real-time alerts, and make data-driven decisions."
+      }
+    }
+  },
+  "tarifs": {
+    "title": "Simple pricing, per company",
+    "subtitle": "Try it for free, then continue with a straightforward annual subscription.",
+    "freeTrial": {
+      "title": "Free trial",
+      "daysValue": "{{count}} days",
+      "note": "No commitment, no credit card",
+      "cta": "Start for free"
+    },
+    "annual": {
+      "title": "Annual subscription",
+      "perCompanyPerYear": "per company, per year",
+      "cta": "Start my trial"
+    },
+    "included": {
+      "title": "Included in the subscription",
+      "avantages": [
+        "Automatic, daily monitoring of public tenders in Burkina Faso",
+        "Personalized alerts based on your business domains and sectors",
+        "Tracking of award results for your bids",
+        "Unlimited access to official bulletins and documents",
+        "Manage multiple companies from a single account"
+      ]
+    },
+    "paymentNote": "Secure payment via Mobile Money (Orange Money, Moov Money) or credit card."
+  },
+  "inscription": {
+    "title": "Company Registration",
+    "subtitle": "Join our platform today",
+    "placeholders": {
+      "nom": "Representative's last name",
+      "prenom": "Representative's first name",
+      "email": "Email address",
+      "password": "Password",
+      "password2": "Confirm password"
+    },
+    "errors": {
+      "nom": "The representative's last name is required",
+      "prenom": "The representative's first name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email format",
+      "passwordRequired": "Password is required",
+      "password2Required": "Password confirmation is required",
+      "passwordMismatch": "Passwords do not match"
+    },
+    "alerts": {
+      "googleError": "Error processing your Google account. Please try again.",
+      "registrationError": "Registration error: {{detail}}",
+      "unexpectedError": "An unexpected error occurred during registration.",
+      "networkError": "Network or server error. Please try again later."
+    },
+    "submit": {
+      "loading": "Registering...",
+      "default": "Create company account"
+    },
+    "divider": "Or continue with",
+    "alreadyAccount": "Already have an account?",
+    "login": "Log in",
+    "terms": "By signing up, you agree to our terms of use and privacy policy"
+  },
+  "connexion": {
+    "title": "Login",
+    "subtitle": "Access your Veille Marchés workspace",
+    "placeholders": {
+      "email": "Email address",
+      "password": "Password"
+    },
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "submit": "Log in",
+    "divider": "Or continue with",
+    "google": "Google",
+    "noAccount": "Don't have an account yet?",
+    "signupLink": "Sign up for free",
+    "securityNote": "Your data is protected with bank-grade encryption",
+    "errors": {
+      "notVerified": "Your account is not verified yet. Please check your email for the verification link.",
+      "invalidCredentials": "Invalid credentials.",
+      "networkError": "Error connecting to the server. Please try again later."
+    },
+    "resend": {
+      "button": "Resend verification email",
+      "sending": "Sending...",
+      "success": "A new verification email has been sent. Please check your inbox.",
+      "error": "Failed to send the verification email. Please try again.",
+      "networkError": "Network error while resending the email."
+    },
+    "forgotPasswordFlow": {
+      "emailRequired": "Please enter your email address above before continuing.",
+      "sending": "Sending...",
+      "genericSuccess": "If your email address is valid, a reset link has been sent to you.",
+      "networkError": "Network error while requesting the reset."
+    }
+  },
+  "resetPassword": {
+    "title": "New password",
+    "subtitle": "Choose a new password for your account",
+    "placeholders": {
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password"
+    },
+    "show": "Show",
+    "hide": "Hide",
+    "submit": {
+      "default": "Reset password",
+      "loading": "Resetting..."
+    },
+    "success": "Your password has been reset successfully. Redirecting to login...",
+    "errors": {
+      "mismatch": "The two passwords do not match.",
+      "invalidLink": "The reset link is invalid or has expired.",
+      "network": "Network error. Please try again later."
+    },
+    "backToLogin": "Back to login"
+  },
+  "activation": {
+    "title": "Account activation",
+    "inProgress": "Activating...",
+    "success": "Your account has been successfully activated.",
+    "alreadyActive": "Your account is already active. You can log in.",
+    "genericError": "The activation link is invalid or has expired.",
+    "fetchError": "Error activating the account."
+  },
+  "emailVerificationSent": {
+    "title": "Verification email sent",
+    "text": "An activation link has been sent to your email address. Please click that link to activate your account.",
+    "backHome": "Back to home"
+  },
+  "paymentReturn": {
+    "title": "Payment confirmation",
+    "loading": "Checking your subscription status...",
+    "missingEntreprise": "Company identifier missing from the return URL.",
+    "errorPrefix": "Unable to verify the status right now: {{error}}. If the payment was completed, it will be taken into account as soon as it is confirmed by our system.",
+    "successPrefix": "Payment confirmed! Your subscription is active until {{date}}.",
+    "pending": "Your payment is being confirmed. This may take a moment - come back to your dashboard shortly to see the updated status.",
+    "backToDashboard": "Back to dashboard"
+  },
+  "footer": {
+    "brand": "Veille Marchés",
+    "description": "The smart solution for monitoring public tenders",
+    "navigation": {
+      "title": "Navigation",
+      "home": "Home",
+      "features": "Features",
+      "pricing": "Pricing"
+    },
+    "contact": {
+      "title": "Contact"
+    },
+    "copyright": "© {{year}} Veille Marchés. All rights reserved."
+  },
+  "dashboard": {
+    "common": {
+      "fermer": "Close",
+      "ajouter": "Add",
+      "retirerLabel": "Remove {{label}}",
+      "aucunResultat": "No results",
+      "chargementCourt": "Loading...",
+      "erreurChargementCourt": "Loading error: {{message}}",
+      "chargementDonneesEntreprise": "Loading company data...",
+      "erreurChargementEntreprise": "Error loading company: {{message}}. Please reload the page.",
+      "chargementSecteurs": "Loading sectors...",
+      "erreurChargementSecteurs": "Error loading sectors: {{message}}",
+      "chargementDomaines": "Loading fields of activity...",
+      "erreurChargementDomaines": "Error loading fields of activity: {{message}}",
+      "rechercherSecteur": "Search for a sector...",
+      "placeholderAjouterDomaine": "Add an unlisted field of activity...",
+      "echecAjoutDomaineInline": "Failed to add field of activity: {{message}}",
+      "redirection": "Redirecting...",
+      "sabonner": "Subscribe",
+      "bannerEssai": "Free trial — {{jours}} day(s) remaining for {{nom}}.",
+      "bannerExpire": "Your trial/subscription for {{nom}} has expired. Subscribe to keep receiving alerts.",
+      "erreurAvecMessage": "Error: {{message}}",
+      "nonApplicable": "N/A"
+    },
+    "sidebar": {
+      "brand": "VeilleMarches Pro",
+      "chargementEntreprises": "Loading companies...",
+      "erreurChargementEntreprises": "Error loading companies: {{message}}",
+      "entrepriseActiveLabel": "Active company:",
+      "selectionnerEntreprise": "Select a company",
+      "aucuneEntreprise": "No company found.",
+      "ajouterEntreprise": "Add a company",
+      "navAccueil": "Home",
+      "navAlertes": "Alerts & Results",
+      "navAlertesCourt": "Alerts",
+      "navProfil": "Profile",
+      "deconnexion": "Log out",
+      "succesChangementEntreprise": "Active company changed successfully!",
+      "echecChangementEntreprise": "Failed to change active company: {{message}}"
+    },
+    "accueil": {
+      "titre": "Dashboard",
+      "sousTitre": "Overview of your monitoring activity",
+      "pasEntreprise": "Please create your company to access the dashboard.",
+      "kpiAppelsOffres": "Tenders this month (for {{nom}})",
+      "kpiAlertesNonLues": "Unread alerts (for {{nom}})",
+      "kpiDerniereRevue": "Date of the last imported review",
+      "dateNonDisponible": "Not available",
+      "actionsRapides": "Quick actions",
+      "btnModifierParametres": "Edit account settings",
+      "btnVoirAlertes": "View latest alerts"
+    },
+    "alertes": {
+      "titre": "Alerts & Results",
+      "sousTitre": "Track notifications and application results",
+      "pasEntreprise": "Please create your company to access your alerts and results.",
+      "titreCarteAlertes": "Alerts received (for {{nom}})",
+      "chargementAlertes": "Loading alerts...",
+      "erreurChargementAlertes": "Error loading alerts: {{message}}",
+      "aucuneAlerte": "No alerts found for your company.",
+      "badgeNouveau": "New",
+      "typeOffre": "TENDER",
+      "canal": "Channel",
+      "publicationLabel": "Publication",
+      "entrepriseLabel": "Company",
+      "voirBulletin": "View bulletin",
+      "titreCarteResultats": "Recent results (for {{nom}})",
+      "chargementResultats": "Loading results...",
+      "erreurChargementResultats": "Error loading results: {{message}}",
+      "aucunResultat": "No results found for your company.",
+      "retenu": "Awarded",
+      "nonRetenu": "Not awarded",
+      "resultatPublieLe": "Result published on",
+      "attributaireLabel": "Awardee",
+      "montantAttribueLabel": "Amount awarded",
+      "voirAnnonce": "View official notice"
+    },
+    "profil": {
+      "titre": "Profile",
+      "sousTitre": "Manage your company information",
+      "chargementProfil": "Loading company profile...",
+      "erreurChargementProfil": "Error loading profile: {{message}}. Please reload the page.",
+      "pasEntreprise": "Please create your company to manage your profile.",
+      "abonnement": {
+        "titre": "Subscription",
+        "chargement": "Loading subscription...",
+        "erreur": "Error loading subscription: {{message}}",
+        "aucuneInfo": "No subscription information available.",
+        "badgeEssai": "Free trial",
+        "essaiTexte": "{{jours}} day(s) remaining, until {{date}}.",
+        "badgeActif": "Active",
+        "actifTexte": "Subscription valid until {{date}}.",
+        "badgeExpire": "Expired",
+        "expireTexte": "Subscribe to keep receiving alerts.",
+        "sabonnerAnnuel": "Subscribe (annual)",
+        "echecPaiement": "Unable to start payment: {{message}}"
+      },
+      "entreprise": {
+        "titre": "Company information",
+        "labelNom": "Company name",
+        "labelNumeroId": "Identification number",
+        "labelRccm": "RCCM number",
+        "labelNomRepresentant": "Representative's last name",
+        "labelPrenomRepresentant": "Representative's first name",
+        "labelAdresse": "Address",
+        "labelEmail": "Email",
+        "labelTelephone": "Phone",
+        "labelSecteurs": "Sectors of activity",
+        "labelDomaines": "Fields of activity",
+        "btnEnregistrement": "Saving...",
+        "btnEnregistrer": "Save changes",
+        "erreurAucuneActive": "No active company to update.",
+        "succesMiseAJour": "Profile updated successfully!"
+      },
+      "secteurs": {
+        "titre": "Add a new sector",
+        "labelNom": "Sector name",
+        "btnAjouter": "Add sector",
+        "succesAjout": "Sector added successfully!",
+        "echecAjout": "Failed to add sector: {{message}}"
+      },
+      "domaines": {
+        "titre": "Add a new field of activity",
+        "labelLibelle": "Field of activity name",
+        "btnAjouter": "Add field of activity",
+        "succesAjout": "Field of activity added successfully!",
+        "echecAjout": "Failed to add field of activity: {{message}}"
+      },
+      "motDePasse": {
+        "titre": "Change password",
+        "labelActuel": "Current password",
+        "labelNouveau": "New password",
+        "labelConfirmer": "Confirm new password",
+        "btnMiseAJour": "Updating...",
+        "btnMettreAJour": "Update password",
+        "erreurMismatch": "The new passwords do not match.",
+        "erreurChampsRequis": "Please fill in all password fields.",
+        "succes": "Password updated successfully!",
+        "echec": "Failed to change password: {{message}}"
+      }
+    },
+    "modales": {
+      "ajoutEntreprise": {
+        "titre": "Create your company",
+        "intro": "Please provide your company's information to get started.",
+        "labelNom": "Company name *",
+        "labelNumeroId": "Identification number *",
+        "labelRccm": "RCCM number *",
+        "labelSecteurs": "Sectors of activity *",
+        "labelDomaines": "Fields of activity *",
+        "btnCreation": "Creating...",
+        "btnCreer": "Create company",
+        "erreurSecteurRequis": "Please select at least one sector of activity.",
+        "succes": "Company created and set as active successfully!",
+        "echec": "Failed to create company: {{message}}"
+      },
+      "apercu": {
+        "titre": "Document preview",
+        "numeroPublieLe": "Number {{numero}} - Published on {{date}}",
+        "pageSuffix": " - Page {{page}}",
+        "chargement": "Loading document...",
+        "erreur": "Unable to display document: {{error}}"
+      },
+      "alerte": {
+        "succes": "Success",
+        "erreur": "Error"
+      }
+    }
+  }
+}

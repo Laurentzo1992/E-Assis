@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { storeTokens, setNavigateInstance } from "../services/auth";
 import { API_BASE_URL } from "../config";
 
 const Connexion = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -11,6 +13,10 @@ const Connexion = () => {
   const [error, setError] = useState("");
   const [showResendEmailButton, setShowResendEmailButton] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
+  // Suit separement le statut du dernier resend (succes/erreur/en cours) - ne pas deduire
+  // l'etat depuis le texte affiche (ex. recherche de "succès" en dur) car ce texte est desormais
+  // traduit et ne contiendrait plus ce mot dans les autres langues.
+  const [resendStatus, setResendStatus] = useState(null); // 'success' | 'error' | null
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState("");
   const navigate = useNavigate();
 
@@ -23,6 +29,7 @@ const Connexion = () => {
     e.preventDefault();
     setError("");
     setResendMessage("");
+    setResendStatus(null);
     setShowResendEmailButton(false);
 
     try {
@@ -52,27 +59,26 @@ const Connexion = () => {
           errorData.detail &&
           errorData.detail.includes("Veuillez vérifier votre adresse email")
         ) {
-          setError(
-            "Votre compte n'est pas encore vérifié. Veuillez consulter votre email pour le lien de vérification."
-          );
+          setError(t("connexion.errors.notVerified"));
           setShowResendEmailButton(true); // Afficher le bouton de renvoi d'email
         } else {
           const errorMessage =
             errorData.detail ||
             errorData.non_field_errors ||
-            "Identifiants invalides.";
+            t("connexion.errors.invalidCredentials");
           setError(errorMessage);
         }
         console.error("Erreur de connexion:", errorData);
       }
     } catch (err) {
       console.error("Erreur réseau ou autre:", err);
-      setError("Erreur de connexion au serveur. Veuillez réessayer plus tard.");
+      setError(t("connexion.errors.networkError"));
     }
   };
 
   const handleResendVerificationEmail = async () => {
-    setResendMessage("Envoi en cours...");
+    setResendMessage(t("connexion.resend.sending"));
+    setResendStatus(null);
     try {
       // Utilisez l'API de demande de réinitialisation de mot de passe pour renvoyer l'email de vérification
       // Le backend doit être configuré pour gérer ce cas pour les emails non vérifiés.
@@ -88,19 +94,17 @@ const Connexion = () => {
       );
 
       if (response.ok) {
-        setResendMessage(
-          "Un nouvel email de vérification a été envoyé. Veuillez vérifier votre boîte de réception."
-        );
+        setResendMessage(t("connexion.resend.success"));
+        setResendStatus("success");
       } else {
         const errorData = await response.json();
-        setResendMessage(
-          errorData.detail ||
-            "Échec de l'envoi de l'email de vérification. Veuillez réessayer."
-        );
+        setResendMessage(errorData.detail || t("connexion.resend.error"));
+        setResendStatus("error");
       }
     } catch (err) {
       console.error("Erreur lors du renvoi de l'email de vérification:", err);
-      setResendMessage("Erreur réseau lors du renvoi de l'email.");
+      setResendMessage(t("connexion.resend.networkError"));
+      setResendStatus("error");
     }
   };
 
@@ -109,10 +113,10 @@ const Connexion = () => {
   // message generique convient ici aussi, sans exposer d'information sur les comptes existants.
   const handleForgotPassword = async () => {
     if (!email) {
-      setForgotPasswordMessage("Veuillez saisir votre adresse email ci-dessus avant de continuer.");
+      setForgotPasswordMessage(t("connexion.forgotPasswordFlow.emailRequired"));
       return;
     }
-    setForgotPasswordMessage("Envoi en cours...");
+    setForgotPasswordMessage(t("connexion.forgotPasswordFlow.sending"));
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/reset-password-request/`, {
         method: "POST",
@@ -121,11 +125,11 @@ const Connexion = () => {
       });
       const data = await response.json();
       setForgotPasswordMessage(
-        data.message || data.detail || "Si votre adresse email est valide, un lien de réinitialisation vous a été envoyé."
+        data.message || data.detail || t("connexion.forgotPasswordFlow.genericSuccess")
       );
     } catch (err) {
       console.error("Erreur lors de la demande de réinitialisation:", err);
-      setForgotPasswordMessage("Erreur réseau lors de la demande de réinitialisation.");
+      setForgotPasswordMessage(t("connexion.forgotPasswordFlow.networkError"));
     }
   };
 
@@ -153,10 +157,8 @@ const Connexion = () => {
                   />
                 </svg>
               </div>
-              <h2 className="connexion-title mb-2">Connexion</h2>
-              <p className="connexion-subtitle">
-                Accédez à votre espace Veille Marchés
-              </p>
+              <h2 className="connexion-title mb-2">{t("connexion.title")}</h2>
+              <p className="connexion-subtitle">{t("connexion.subtitle")}</p>
             </div>
 
             {/* Formulaire */}
@@ -171,7 +173,7 @@ const Connexion = () => {
                       className="btn btn-link text-decoration-none mt-2 d-block mx-auto"
                       onClick={handleResendVerificationEmail}
                     >
-                      Renvoyer l'email de vérification
+                      {t("connexion.resend.button")}
                     </button>
                   )}
                   {resendMessage && (
@@ -179,9 +181,12 @@ const Connexion = () => {
                       className="text-center mt-2"
                       style={{
                         fontSize: "0.9rem",
-                        color: resendMessage.includes("succès")
-                          ? "green"
-                          : "red",
+                        color:
+                          resendStatus === "success"
+                            ? "green"
+                            : resendStatus === "error"
+                            ? "red"
+                            : undefined,
                       }}
                     >
                       {resendMessage}
@@ -220,7 +225,7 @@ const Connexion = () => {
                   <input
                     type="email"
                     className="form-control connexion-input"
-                    placeholder="Adresse email"
+                    placeholder={t("connexion.placeholders.email")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -262,7 +267,7 @@ const Connexion = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     className="form-control connexion-input"
-                    placeholder="Mot de passe"
+                    placeholder={t("connexion.placeholders.password")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -324,7 +329,7 @@ const Connexion = () => {
                     className="form-check-label connexion-checkbox-label"
                     htmlFor="rememberMe"
                   >
-                    Se souvenir de moi
+                    {t("connexion.rememberMe")}
                   </label>
                 </div>
                 <button
@@ -332,7 +337,7 @@ const Connexion = () => {
                   className="connexion-forgot-link btn btn-link p-0"
                   onClick={handleForgotPassword}
                 >
-                  Mot de passe oublié ?
+                  {t("connexion.forgotPassword")}
                 </button>
               </div>
               {forgotPasswordMessage && (
@@ -344,7 +349,7 @@ const Connexion = () => {
                 type="submit"
                 className="btn connexion-btn-primary w-100 mb-4"
               >
-                Se connecter
+                {t("connexion.submit")}
                 <svg
                   width="16"
                   height="16"
@@ -365,7 +370,7 @@ const Connexion = () => {
 
               {/* Séparateur */}
               <div className="connexion-divider mb-4">
-                <span>Ou continuer avec</span>
+                <span>{t("connexion.divider")}</span>
               </div>
 
               {/* Boutons sociaux */}
@@ -400,7 +405,7 @@ const Connexion = () => {
                         fill="#EA4335"
                       />
                     </svg>
-                    Google
+                    {t("connexion.google")}
                   </button>
                 </div>
               </div>
@@ -408,12 +413,12 @@ const Connexion = () => {
               {/* Lien d'inscription */}
               <div className="text-center">
                 <p className="connexion-signup-text">
-                  Pas encore de compte ?
+                  {t("connexion.noAccount")}
                   <Link
                     className="connexion-signup-link ms-1"
                     to="/Inscription"
                   >
-                    S'inscrire gratuitement
+                    {t("connexion.signupLink")}
                   </Link>
                 </p>
               </div>
@@ -436,10 +441,7 @@ const Connexion = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <small>
-                  Vos données sont protégées par un chiffrement de niveau
-                  bancaire
-                </small>
+                <small>{t("connexion.securityNote")}</small>
               </div>
             </form>
           </div>

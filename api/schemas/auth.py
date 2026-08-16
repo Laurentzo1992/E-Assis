@@ -46,6 +46,7 @@ class ProfileResponse(BaseModel):
     repprenom: str | None
     telephone: str | None
     notifications_actives: bool
+    langue: str
 
     model_config = {"from_attributes": True}
 
@@ -55,6 +56,7 @@ class ProfileUpdateRequest(BaseModel):
     repprenom: str | None = None
     telephone: str | None = None
     notifications_actives: bool | None = None
+    langue: str | None = None
 
 
 class GoogleLoginRequest(BaseModel):

@@ -41,7 +41,16 @@ def _strip_tags(html: str) -> str:
     return "".join(parser.parts).strip()
 
 
-def render_template(template_name: str, context: dict) -> str:
+def render_template(template_name: str, context: dict, langue: str = "fr") -> str:
+    """Rend `template_name` (ex. "activation_email.html"). Si `langue != "fr"`, cherche d'abord la
+    variante `<nom>.<langue>.html` (ex. "activation_email.en.html") et l'utilise si elle existe -
+    sinon repli silencieux sur le fichier francais par defaut (ex. langue "mos" pas encore
+    couverte pour un template donne)."""
+    if langue != "fr":
+        base, _, ext = template_name.rpartition(".")
+        candidat = f"{base}.{langue}.{ext}"
+        if (TEMPLATES_DIR / candidat).exists():
+            template_name = candidat
     return _env.get_template(template_name).render(**context)
 
 
@@ -75,14 +84,18 @@ def send_email(
         server.sendmail(message["From"], [to_email], message.as_string())
 
 
-def send_activation_email(user_email: str, activation_link: str) -> None:
-    html = render_template("activation_email.html", {"user_email": user_email, "activation_link": activation_link})
+def send_activation_email(user_email: str, activation_link: str, langue: str = "fr") -> None:
+    html = render_template(
+        "activation_email.html",
+        {"user_email": user_email, "activation_link": activation_link},
+        langue=langue,
+    )
     send_email(user_email, "Vérification de votre compte", html)
 
 
-def send_password_reset_email(user_email: str, user_name: str, reset_link: str) -> None:
+def send_password_reset_email(user_email: str, user_name: str, reset_link: str, langue: str = "fr") -> None:
     html = render_template(
-        "password_reset_email.html", {"user_name": user_name, "reset_link": reset_link}
+        "password_reset_email.html", {"user_name": user_name, "reset_link": reset_link}, langue=langue
     )
     send_email(user_email, "Réinitialisation de votre mot de passe", html)
 
@@ -96,11 +109,14 @@ def send_alert_email(
     date_bulletin: str | None = None,
     page_number: int | None = None,
     page_image: bytes | None = None,
+    langue: str = "fr",
 ) -> None:
     """Canal d'alerte interim en attendant l'approbation Meta du modele WhatsApp (cf.
     api/scripts/match_and_alert.py) - meme resume redige par le LLM et meme organisme qu'en
     WhatsApp, mais mis en page pour l'email (pas de contrainte de gabarit Meta) et avec, si
-    fourni, la page du bulletin correspondant au match en piece jointe."""
+    fourni, la page du bulletin correspondant au match en piece jointe. `resume`/`organisme` sont
+    deja dans la langue voulue au moment de l'appel (cf. match_and_alert.py::_envoyer_alerte) -
+    `langue` ne pilote ici que le choix du GABARIT HTML (libelles fixes), pas leur contenu."""
     html = render_template(
         "alerte_marche.html",
         {
@@ -111,6 +127,7 @@ def send_alert_email(
             "date_bulletin": date_bulletin,
             "page_number": page_number,
         },
+        langue=langue,
     )
     attachment = None
     if page_image is not None:

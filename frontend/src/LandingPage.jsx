@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import businessMan from "./assets/undraw_business-decisions_3x2a.svg";
@@ -10,6 +11,7 @@ import { fetchTarif } from "./services/tarif";
 import "./style.css";
 
 export default function LandingPage() {
+  const { t } = useTranslation();
   const [tarif, setTarif] = useState(null);
 
   useEffect(() => {
@@ -21,27 +23,66 @@ export default function LandingPage() {
   return (
     <>
       <Navbar />
+      <header className="header-gradient">
+        {/* Triangle en bas à gauche */}
+        <svg
+          className="triangle bottom-left"
+          width="250"
+          height="250"
+          viewBox="0 0 358 381"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M358 381C178.8 275.8 44.6667 83.1667 0 0V381H358Z"
+            fill="#D9D9D9"
+          />
+        </svg>
+
+        {/* Triangle en haut à droite */}
+        <svg
+          className="triangle top-right"
+          width="250"
+          height="250"
+          viewBox="0 0 358 381"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M358 381C178.8 275.8 44.6667 83.1667 0 0V381H358Z"
+            fill="#D9D9D9"
+          />
+        </svg>
+
+        {/* Contenu texte */}
+        <h1>{t("landing.hero.title")}</h1>
+        <p className="fs-5">{t("landing.hero.subtitle")}</p>
+        <Link className="btn mt-3 text-white" to="/connexion">
+          {t("landing.hero.cta")}
+        </Link>
+        <p className="hero-trial-note">{t("landing.hero.trialNote")}</p>
+      </header>
       <main className="my-3">
         <section id="tarifs" className="py-5" style={{ background: "#f8f9ff" }}>
           <div className="container py-4">
             <div className="text-center mb-5">
-              <h2 className="titleColor">Un tarif simple, par entreprise</h2>
-              <p className="text-muted fs-5">
-                Essayez gratuitement, puis continuez avec un abonnement annuel sans surprise.
-              </p>
+              <h2 className="titleColor">{t("landing.pricing.title")}</h2>
+              <p className="text-muted fs-5">{t("landing.pricing.subtitle")}</p>
             </div>
 
             <div className="row justify-content-center">
               <div className="col-lg-5 col-md-8 mb-4">
                 <div className="card h-100 shadow-sm">
                   <div className="card-body p-4 text-center">
-                    <h3 className="titleColor">Essai gratuit</h3>
+                    <h3 className="titleColor">{t("landing.pricing.freeTrial.title")}</h3>
                     <p className="display-6 fw-bold mb-0">
-                      {tarif ? `${tarif.essai_gratuit_jours} jours` : "…"}
+                      {tarif
+                        ? t("landing.pricing.freeTrial.daysValue", { count: tarif.essai_gratuit_jours })
+                        : "…"}
                     </p>
-                    <p className="text-muted">Sans engagement, sans carte bancaire</p>
+                    <p className="text-muted">{t("landing.pricing.freeTrial.note")}</p>
                     <Link className="btn btn-cta w-100 mt-3" to="/Inscription">
-                      Commencer gratuitement
+                      {t("landing.pricing.freeTrial.cta")}
                     </Link>
                   </div>
                 </div>
@@ -50,13 +91,13 @@ export default function LandingPage() {
               <div className="col-lg-5 col-md-8 mb-4">
                 <div className="card h-100 shadow" style={{ border: "2px solid var(--orange)" }}>
                   <div className="card-body p-4 text-center">
-                    <h3 className="titleColor">Abonnement annuel</h3>
+                    <h3 className="titleColor">{t("landing.pricing.annual.title")}</h3>
                     <p className="display-6 fw-bold mb-0">
                       {tarif ? `${Number(tarif.prix_annuel).toLocaleString("fr-FR")} ${tarif.devise}` : "…"}
                     </p>
-                    <p className="text-muted">par entreprise, par an</p>
+                    <p className="text-muted">{t("landing.pricing.annual.perCompanyPerYear")}</p>
                     <Link className="btn btn-cta w-100 mt-3" to="/Inscription">
-                      Démarrer mon essai
+                      {t("landing.pricing.annual.cta")}
                     </Link>
                   </div>
                 </div>
@@ -64,13 +105,13 @@ export default function LandingPage() {
             </div>
 
             <p className="text-muted text-center mb-0">
-              Paiement sécurisé par Mobile Money (Orange Money, Moov Money) ou carte bancaire.{" "}
-              <Link to="/Tarifs">Voir le détail des avantages inclus</Link>.
+              {t("landing.pricing.paymentNote")}{" "}
+              <Link to="/Tarifs">{t("landing.pricing.seeDetails")}</Link>.
             </p>
           </div>
         </section>
 
-        <h2 className="titleColor text-center mt-5">Notre mission</h2>
+        <h2 className="titleColor text-center mt-5">{t("landing.mission.title")}</h2>
         <section className="mb-5 sectionColor1 text-white fw-bold position-relative container-fluid">
           <div className="container-fluid">
             <div className="row">
@@ -86,11 +127,7 @@ export default function LandingPage() {
                 className=" col-12 col-md-8
                existense"
               >
-                <p>
-                  Nous facilitons l'accès des entreprises burkinabè aux marchés
-                  publics, en diffusant en temps réel des appels d'offres
-                  clairs, ciblés et accessibles.
-                </p>
+                <p>{t("landing.mission.text")}</p>
               </div>
             </div>
           </div>
@@ -99,15 +136,11 @@ export default function LandingPage() {
 
         <section className="mb-5 text-center sectionColor2">
           <div className="container-fluid">
-            <h2 className="titleColor2 text-center ">Notre vision</h2>
+            <h2 className="titleColor2 text-center ">{t("landing.vision.title")}</h2>
             <div className="row align-items-center">
               <div className=" col-12 col-lg-8 vision-text-container me-5">
                 <div className="vision-content">
-                  <p className="vision-text ">
-                    Augmenter le nombre d'opportunités pour toutes les
-                    entreprises du Burkina Faso, en rendant chaque appel d'offre
-                    accessible en un clic.
-                  </p>
+                  <p className="vision-text ">{t("landing.vision.text")}</p>
                 </div>
               </div>
 
@@ -124,7 +157,7 @@ export default function LandingPage() {
           </div>
         </section>
         <h2 className="titleColor text-center mt-5 fs-2 mb-5">
-          Pourquoi choisir notre solution ?
+          {t("landing.features.title")}
         </h2>
 
         <section id="fonctionnalites" className="mb-5 features-section">
@@ -156,10 +189,9 @@ export default function LandingPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="feature-title">Sécurité des données</h3>
+                  <h3 className="feature-title">{t("landing.features.security.title")}</h3>
                   <p className="feature-description">
-                    Vos informations sont protégées avec des standards élevés et
-                    un stockage chiffré.
+                    {t("landing.features.security.description")}
                   </p>
                 </div>
               </div>
@@ -231,10 +263,9 @@ export default function LandingPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="feature-title">Veille automatique</h3>
+                  <h3 className="feature-title">{t("landing.features.monitoring.title")}</h3>
                   <p className="feature-description">
-                    Un système intelligent surveille pour vous les opportunités
-                    selon vos critères personnalisés.
+                    {t("landing.features.monitoring.description")}
                   </p>
                 </div>
               </div>
@@ -269,10 +300,9 @@ export default function LandingPage() {
                       <circle cx="9" cy="9" r="2" fill="#ef5b0c" />
                     </svg>
                   </div>
-                  <h3 className="feature-title">Statistiques & alertes</h3>
+                  <h3 className="feature-title">{t("landing.features.stats.title")}</h3>
                   <p className="feature-description">
-                    Visualisez les tendances, recevez des alertes en temps réel
-                    et prenez des décisions basées sur les données.
+                    {t("landing.features.stats.description")}
                   </p>
                 </div>
               </div>

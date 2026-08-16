@@ -1,0 +1,389 @@
+{
+  "common": {
+    "envoyer": "Envoyer",
+    "retour": "Retour",
+    "chargement": "Chargement...",
+    "mooreAvertissement": "Traduction automatique, non relue par un locuteur natif",
+    "languageLabel": "Langue",
+    "languages": {
+      "fr": "Français",
+      "en": "English",
+      "mos": "Mooré"
+    }
+  },
+  "nav": {
+    "brand": "Veille Marchés",
+    "tarifs": "Tarifs",
+    "connexion": "Se connecter",
+    "inscription": "Inscription",
+    "toggleNavigation": "Basculer la navigation"
+  },
+  "landing": {
+    "hero": {
+      "title": "Ne manquez plus aucune opportunité de marché public au Burkina Faso",
+      "subtitle": "La plateforme sécurisée, fiable et ultra-rapide qui scanne, classe et vous alerte en temps réel",
+      "cta": "Démarrer ma veille",
+      "trialNote": "30 jours d'essai gratuit — sans carte bancaire"
+    },
+    "pricing": {
+      "title": "Un tarif simple, par entreprise",
+      "subtitle": "Essayez gratuitement, puis continuez avec un abonnement annuel sans surprise.",
+      "freeTrial": {
+        "title": "Essai gratuit",
+        "daysValue": "{{count}} jours",
+        "note": "Sans engagement, sans carte bancaire",
+        "cta": "Commencer gratuitement"
+      },
+      "annual": {
+        "title": "Abonnement annuel",
+        "perCompanyPerYear": "par entreprise, par an",
+        "cta": "Démarrer mon essai"
+      },
+      "paymentNote": "Paiement sécurisé par Mobile Money (Orange Money, Moov Money) ou carte bancaire.",
+      "seeDetails": "Voir le détail des avantages inclus"
+    },
+    "mission": {
+      "title": "Notre mission",
+      "text": "Nous facilitons l'accès des entreprises burkinabè aux marchés publics, en diffusant en temps réel des appels d'offres clairs, ciblés et accessibles."
+    },
+    "vision": {
+      "title": "Notre vision",
+      "text": "Augmenter le nombre d'opportunités pour toutes les entreprises du Burkina Faso, en rendant chaque appel d'offre accessible en un clic."
+    },
+    "features": {
+      "title": "Pourquoi choisir notre solution ?",
+      "security": {
+        "title": "Sécurité des données",
+        "description": "Vos informations sont protégées avec des standards élevés et un stockage chiffré."
+      },
+      "monitoring": {
+        "title": "Veille automatique",
+        "description": "Un système intelligent surveille pour vous les opportunités selon vos critères personnalisés."
+      },
+      "stats": {
+        "title": "Statistiques & alertes",
+        "description": "Visualisez les tendances, recevez des alertes en temps réel et prenez des décisions basées sur les données."
+      }
+    }
+  },
+  "tarifs": {
+    "title": "Un tarif simple, par entreprise",
+    "subtitle": "Essayez gratuitement, puis continuez avec un abonnement annuel sans surprise.",
+    "freeTrial": {
+      "title": "Essai gratuit",
+      "daysValue": "{{count}} jours",
+      "note": "Sans engagement, sans carte bancaire",
+      "cta": "Commencer gratuitement"
+    },
+    "annual": {
+      "title": "Abonnement annuel",
+      "perCompanyPerYear": "par entreprise, par an",
+      "cta": "Démarrer mon essai"
+    },
+    "included": {
+      "title": "Inclus dans l'abonnement",
+      "avantages": [
+        "Veille automatique et quotidienne des marchés publics du Burkina Faso",
+        "Alertes personnalisées selon vos domaines et secteurs d'activité",
+        "Suivi des résultats d'attribution de vos candidatures",
+        "Accès illimité aux bulletins et documents officiels",
+        "Gestion de plusieurs entreprises depuis un seul compte"
+      ]
+    },
+    "paymentNote": "Paiement sécurisé par Mobile Money (Orange Money, Moov Money) ou carte bancaire."
+  },
+  "inscription": {
+    "title": "Inscription Entreprise",
+    "subtitle": "Rejoignez notre plateforme dès aujourd'hui",
+    "placeholders": {
+      "nom": "Nom du représentant",
+      "prenom": "Prénom du représentant",
+      "email": "Adresse email",
+      "password": "Mot de passe",
+      "password2": "Confirmer le mot de passe"
+    },
+    "errors": {
+      "nom": "Le nom du représentant est requis",
+      "prenom": "Le prénom du représentant est requis",
+      "emailRequired": "L'email est requis",
+      "emailInvalid": "Format d'email invalide",
+      "passwordRequired": "Le mot de passe est requis",
+      "password2Required": "La confirmation du mot de passe est requise",
+      "passwordMismatch": "Les mots de passe ne correspondent pas"
+    },
+    "alerts": {
+      "googleError": "Erreur lors du traitement de votre compte Google. Veuillez réessayer.",
+      "registrationError": "Erreur d'inscription : {{detail}}",
+      "unexpectedError": "Une erreur inattendue est survenue lors de l'inscription.",
+      "networkError": "Erreur réseau ou serveur. Veuillez réessayer plus tard."
+    },
+    "submit": {
+      "loading": "Inscription en cours...",
+      "default": "Créer le compte entreprise"
+    },
+    "divider": "Ou continuer avec",
+    "alreadyAccount": "Déjà un compte ?",
+    "login": "Se connecter",
+    "terms": "En vous inscrivant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité"
+  },
+  "connexion": {
+    "title": "Connexion",
+    "subtitle": "Accédez à votre espace Veille Marchés",
+    "placeholders": {
+      "email": "Adresse email",
+      "password": "Mot de passe"
+    },
+    "rememberMe": "Se souvenir de moi",
+    "forgotPassword": "Mot de passe oublié ?",
+    "submit": "Se connecter",
+    "divider": "Ou continuer avec",
+    "google": "Google",
+    "noAccount": "Pas encore de compte ?",
+    "signupLink": "S'inscrire gratuitement",
+    "securityNote": "Vos données sont protégées par un chiffrement de niveau bancaire",
+    "errors": {
+      "notVerified": "Votre compte n'est pas encore vérifié. Veuillez consulter votre email pour le lien de vérification.",
+      "invalidCredentials": "Identifiants invalides.",
+      "networkError": "Erreur de connexion au serveur. Veuillez réessayer plus tard."
+    },
+    "resend": {
+      "button": "Renvoyer l'email de vérification",
+      "sending": "Envoi en cours...",
+      "success": "Un nouvel email de vérification a été envoyé. Veuillez vérifier votre boîte de réception.",
+      "error": "Échec de l'envoi de l'email de vérification. Veuillez réessayer.",
+      "networkError": "Erreur réseau lors du renvoi de l'email."
+    },
+    "forgotPasswordFlow": {
+      "emailRequired": "Veuillez saisir votre adresse email ci-dessus avant de continuer.",
+      "sending": "Envoi en cours...",
+      "genericSuccess": "Si votre adresse email est valide, un lien de réinitialisation vous a été envoyé.",
+      "networkError": "Erreur réseau lors de la demande de réinitialisation."
+    }
+  },
+  "resetPassword": {
+    "title": "Nouveau mot de passe",
+    "subtitle": "Choisissez un nouveau mot de passe pour votre compte",
+    "placeholders": {
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe"
+    },
+    "show": "Afficher",
+    "hide": "Masquer",
+    "submit": {
+      "default": "Réinitialiser le mot de passe",
+      "loading": "Réinitialisation en cours..."
+    },
+    "success": "Votre mot de passe a été réinitialisé avec succès. Redirection vers la connexion...",
+    "errors": {
+      "mismatch": "Les deux mots de passe ne correspondent pas.",
+      "invalidLink": "Le lien de réinitialisation est invalide ou a expiré.",
+      "network": "Erreur réseau. Veuillez réessayer plus tard."
+    },
+    "backToLogin": "Retour à la connexion"
+  },
+  "activation": {
+    "title": "Activation du compte",
+    "inProgress": "Activation en cours...",
+    "success": "Votre compte a été activé avec succès.",
+    "alreadyActive": "Votre compte est activé. Vous pouvez vous connecter.",
+    "genericError": "Le lien d'activation est invalide ou expiré.",
+    "fetchError": "Erreur lors de l'activation du compte."
+  },
+  "emailVerificationSent": {
+    "title": "Vérification d'email envoyée",
+    "text": "Un lien d'activation a été envoyé à votre adresse email. Veuillez cliquer sur ce lien pour activer votre compte.",
+    "backHome": "Retour à l'accueil"
+  },
+  "paymentReturn": {
+    "title": "Retour du paiement",
+    "loading": "Vérification du statut de votre abonnement...",
+    "missingEntreprise": "Identifiant d'entreprise manquant dans l'URL de retour.",
+    "errorPrefix": "Impossible de vérifier le statut pour le moment : {{error}}. Si le paiement a bien été effectué, il sera pris en compte dès sa confirmation par notre système.",
+    "successPrefix": "Paiement confirmé ! Votre abonnement est actif jusqu'au {{date}}.",
+    "pending": "Votre paiement est en cours de confirmation. Cela peut prendre quelques instants - revenez sur votre tableau de bord dans un moment pour voir le statut mis à jour.",
+    "backToDashboard": "Retour au tableau de bord"
+  },
+  "footer": {
+    "brand": "Veille Marchés",
+    "description": "La solution intelligente pour votre veille des marchés publics",
+    "navigation": {
+      "title": "Navigation",
+      "home": "Accueil",
+      "features": "Fonctionnalités",
+      "pricing": "Tarifs"
+    },
+    "contact": {
+      "title": "Contact"
+    },
+    "copyright": "© {{year}} Veille Marchés. Tous droits réservés."
+  },
+  "dashboard": {
+    "common": {
+      "fermer": "Fermer",
+      "ajouter": "Ajouter",
+      "retirerLabel": "Retirer {{label}}",
+      "aucunResultat": "Aucun résultat",
+      "chargementCourt": "Chargement...",
+      "erreurChargementCourt": "Erreur de chargement: {{message}}",
+      "chargementDonneesEntreprise": "Chargement des données de l'entreprise...",
+      "erreurChargementEntreprise": "Erreur lors du chargement de l'entreprise : {{message}}. Veuillez recharger la page.",
+      "chargementSecteurs": "Chargement des secteurs...",
+      "erreurChargementSecteurs": "Erreur de chargement des secteurs: {{message}}",
+      "chargementDomaines": "Chargement des domaines...",
+      "erreurChargementDomaines": "Erreur de chargement des domaines: {{message}}",
+      "rechercherSecteur": "Rechercher un secteur...",
+      "placeholderAjouterDomaine": "Ajouter un domaine non listé...",
+      "echecAjoutDomaineInline": "Échec de l'ajout du domaine : {{message}}",
+      "redirection": "Redirection...",
+      "sabonner": "S'abonner",
+      "bannerEssai": "Essai gratuit — {{jours}} jour(s) restant(s) pour {{nom}}.",
+      "bannerExpire": "Votre essai/abonnement pour {{nom}} a expiré. Abonnez-vous pour continuer à recevoir des alertes.",
+      "erreurAvecMessage": "Erreur: {{message}}",
+      "nonApplicable": "N/A"
+    },
+    "sidebar": {
+      "brand": "VeilleMarches Pro",
+      "chargementEntreprises": "Chargement des entreprises...",
+      "erreurChargementEntreprises": "Erreur de chargement des entreprises: {{message}}",
+      "entrepriseActiveLabel": "Entreprise active :",
+      "selectionnerEntreprise": "Sélectionner une entreprise",
+      "aucuneEntreprise": "Aucune entreprise trouvée.",
+      "ajouterEntreprise": "Ajouter une entreprise",
+      "navAccueil": "Accueil",
+      "navAlertes": "Alertes & Résultats",
+      "navAlertesCourt": "Alertes",
+      "navProfil": "Profil",
+      "deconnexion": "Déconnexion",
+      "succesChangementEntreprise": "Entreprise active changée avec succès !",
+      "echecChangementEntreprise": "Échec du changement d'entreprise active: {{message}}"
+    },
+    "accueil": {
+      "titre": "Tableau de bord",
+      "sousTitre": "Vue d'overview de votre activité de veille",
+      "pasEntreprise": "Veuillez créer votre entreprise pour accéder au tableau de bord.",
+      "kpiAppelsOffres": "Appels d'offres ce mois (pour {{nom}})",
+      "kpiAlertesNonLues": "Alertes non lues (pour {{nom}})",
+      "kpiDerniereRevue": "Date de la dernière revue importée",
+      "dateNonDisponible": "Non disponible",
+      "actionsRapides": "Actions rapides",
+      "btnModifierParametres": "Modifier les paramètres du compte",
+      "btnVoirAlertes": "Voir dernières alertes"
+    },
+    "alertes": {
+      "titre": "Alertes & Résultats",
+      "sousTitre": "Suivi des notifications et résultats de candidatures",
+      "pasEntreprise": "Veuillez créer votre entreprise pour accéder à vos alertes et résultats.",
+      "titreCarteAlertes": "Alertes reçues (pour {{nom}})",
+      "chargementAlertes": "Chargement des alertes...",
+      "erreurChargementAlertes": "Erreur lors du chargement des alertes : {{message}}",
+      "aucuneAlerte": "Aucune alerte trouvée pour votre entreprise.",
+      "badgeNouveau": "Nouveau",
+      "typeOffre": "OFFRE",
+      "canal": "Canal",
+      "publicationLabel": "Publication",
+      "entrepriseLabel": "Entreprise",
+      "voirBulletin": "Voir le bulletin",
+      "titreCarteResultats": "Résultats récents (pour {{nom}})",
+      "chargementResultats": "Chargement des résultats...",
+      "erreurChargementResultats": "Erreur lors du chargement des résultats : {{message}}",
+      "aucunResultat": "Aucun résultat trouvé pour votre entreprise.",
+      "retenu": "Retenu",
+      "nonRetenu": "Non retenu",
+      "resultatPublieLe": "Résultat publié le",
+      "attributaireLabel": "Attributaire",
+      "montantAttribueLabel": "Montant attribué",
+      "voirAnnonce": "Voir l'annonce officielle"
+    },
+    "profil": {
+      "titre": "Profil",
+      "sousTitre": "Gestion des informations de l'entreprise",
+      "chargementProfil": "Chargement du profil de l'entreprise...",
+      "erreurChargementProfil": "Erreur lors du chargement du profil : {{message}}. Veuillez recharger la page.",
+      "pasEntreprise": "Veuillez créer votre entreprise pour gérer votre profil.",
+      "abonnement": {
+        "titre": "Abonnement",
+        "chargement": "Chargement de l'abonnement...",
+        "erreur": "Erreur de chargement de l'abonnement : {{message}}",
+        "aucuneInfo": "Aucune information d'abonnement disponible.",
+        "badgeEssai": "Essai gratuit",
+        "essaiTexte": "{{jours}} jour(s) restant(s), jusqu'au {{date}}.",
+        "badgeActif": "Actif",
+        "actifTexte": "Abonnement valide jusqu'au {{date}}.",
+        "badgeExpire": "Expiré",
+        "expireTexte": "Abonnez-vous pour continuer à recevoir des alertes.",
+        "sabonnerAnnuel": "S'abonner (annuel)",
+        "echecPaiement": "Impossible de démarrer le paiement : {{message}}"
+      },
+      "entreprise": {
+        "titre": "Informations de l'entreprise",
+        "labelNom": "Nom de l'entreprise",
+        "labelNumeroId": "Numéro d'identification",
+        "labelRccm": "Numéro RCCM",
+        "labelNomRepresentant": "Nom du représentant",
+        "labelPrenomRepresentant": "Prénom du représentant",
+        "labelAdresse": "Adresse",
+        "labelEmail": "Email",
+        "labelTelephone": "Téléphone",
+        "labelSecteurs": "Secteurs d'activité",
+        "labelDomaines": "Domaines d'activité",
+        "btnEnregistrement": "Enregistrement...",
+        "btnEnregistrer": "Enregistrer les modifications",
+        "erreurAucuneActive": "Aucune entreprise active à mettre à jour.",
+        "succesMiseAJour": "Profil mis à jour avec succès !"
+      },
+      "secteurs": {
+        "titre": "Ajouter un nouveau secteur",
+        "labelNom": "Nom du secteur",
+        "btnAjouter": "Ajouter le secteur",
+        "succesAjout": "Secteur ajouté avec succès !",
+        "echecAjout": "Échec de l'ajout du secteur: {{message}}"
+      },
+      "domaines": {
+        "titre": "Ajouter un nouveau domaine",
+        "labelLibelle": "Libellé du domaine",
+        "btnAjouter": "Ajouter le domaine",
+        "succesAjout": "Domaine ajouté avec succès !",
+        "echecAjout": "Échec de l'ajout du domaine: {{message}}"
+      },
+      "motDePasse": {
+        "titre": "Changer le mot de passe",
+        "labelActuel": "Mot de passe actuel",
+        "labelNouveau": "Nouveau mot de passe",
+        "labelConfirmer": "Confirmer le nouveau mot de passe",
+        "btnMiseAJour": "Mise à jour...",
+        "btnMettreAJour": "Mettre à jour le mot de passe",
+        "erreurMismatch": "Les nouveaux mots de passe ne correspondent pas.",
+        "erreurChampsRequis": "Veuillez remplir tous les champs du mot de passe.",
+        "succes": "Mot de passe mis à jour avec succès !",
+        "echec": "Échec du changement de mot de passe : {{message}}"
+      }
+    },
+    "modales": {
+      "ajoutEntreprise": {
+        "titre": "Créer votre entreprise",
+        "intro": "Veuillez renseigner les informations de votre entreprise pour commencer.",
+        "labelNom": "Nom de l'entreprise *",
+        "labelNumeroId": "Numéro d'identification *",
+        "labelRccm": "Numéro RCCM *",
+        "labelSecteurs": "Secteurs d'activité *",
+        "labelDomaines": "Domaines d'activité *",
+        "btnCreation": "Création...",
+        "btnCreer": "Créer l'entreprise",
+        "erreurSecteurRequis": "Veuillez sélectionner au moins un secteur d'activité.",
+        "succes": "Entreprise créée et définie comme active avec succès !",
+        "echec": "Échec de la création de l'entreprise: {{message}}"
+      },
+      "apercu": {
+        "titre": "Aperçu du document",
+        "numeroPublieLe": "Numéro {{numero}} - Publié le {{date}}",
+        "pageSuffix": " - Page {{page}}",
+        "chargement": "Chargement du document...",
+        "erreur": "Impossible d'afficher le document : {{error}}"
+      },
+      "alerte": {
+        "succes": "Succès",
+        "erreur": "Erreur"
+      }
+    }
+  }
+}

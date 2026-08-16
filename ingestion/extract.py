@@ -9,7 +9,7 @@ page est quasi vide.
 import re
 from pathlib import Path
 
-import fitz  # pymupdf
+import fitz
 import httpx
 
 from ingestion import config

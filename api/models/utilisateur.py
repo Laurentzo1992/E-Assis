@@ -23,6 +23,10 @@ class Utilisateur(Base):
     repprenom: Mapped[str | None] = mapped_column(String(255), nullable=True)
     telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     notifications_actives: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Preference de langue de l'interface (compte) - "fr"/"en"/"mos" (moore). Ne pilote pas la
+    # langue du contenu des alertes envoyees a une entreprise (cf. Entreprise.langue_alertes),
+    # meme si cette derniere en herite la valeur a la creation.
+    langue: Mapped[str] = mapped_column(String(5), default="fr", server_default="'fr'")
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     is_staff: Mapped[bool] = mapped_column(Boolean, default=False)

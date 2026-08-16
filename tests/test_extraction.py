@@ -8,14 +8,20 @@ from types import SimpleNamespace
 import pytest
 
 from api.scripts.extract_bulletin import (
-    _corriger_type_avis,
+    _detecter_type_avis,
     _group_by_section,
     _parse_date_bulletin,
     _semble_ligne_de_tableau,
     _semble_repertoire_fournisseurs,
     _semble_trop_courte,
 )
-from llm_service.extraction_prompts import AvisExtrait, ExtractionEchouee, extraire_avis, parse_llm_date
+from llm_service.extraction_prompts import (
+    ExtractionEchouee,
+    extraire_appel_offre,
+    extraire_avis,
+    extraire_resultat,
+    parse_llm_date,
+)
 
 
 def _fake_ollama_client(*reponses: str):
@@ -322,59 +328,40 @@ def test_extraire_avis_normalise_les_synonymes_de_type_avis(monkeypatch):
     assert result[0].type_avis == "resultat"
 
 
-def _avis_minimal(type_avis: str) -> AvisExtrait:
-    return AvisExtrait(type_avis=type_avis, organisme="X", objet="Y")
-
-
-def test_corriger_type_avis_ecrase_llm_si_marqueur_resultat_non_ambigu():
-    """Bug reel constate sur le bulletin n°4458 : le LLM classait 'appel_offre' une section qui
-    contenait litteralement 'a ete declaree attributaire du marche'."""
-    avis = _avis_minimal("appel_offre")
+def test_detecter_type_avis_marqueur_resultat_non_ambigu():
+    """Bug reel constate sur le bulletin n°4458 : le LLM (avec l'ancien prompt generique unique)
+    classait a tort 'appel_offre' une section qui contenait litteralement 'a ete declaree
+    attributaire du marche' - desormais le type est tranche AVANT tout appel LLM, evitant meme
+    de poser la question a un modele faillible."""
     texte = "L'entreprise « FZ SERVICES SARL » a été déclarée attributaire du marché."
-
-    corrige = _corriger_type_avis(avis, texte, "section test")
-
-    assert corrige.type_avis == "resultat"
+    assert _detecter_type_avis(texte) == "resultat"
 
 
-def test_corriger_type_avis_ecrase_llm_si_marqueur_appel_offre_non_ambigu():
-    avis = _avis_minimal("resultat")
+def test_detecter_type_avis_marqueur_appel_offre_non_ambigu():
     texte = "Avis d'appel d'offres ouvert (AAOO) n°2026-042 relatif a..."
-
-    corrige = _corriger_type_avis(avis, texte, "section test")
-
-    assert corrige.type_avis == "appel_offre"
+    assert _detecter_type_avis(texte) == "appel_offre"
 
 
-def test_corriger_type_avis_garde_llm_si_texte_ambigu():
+def test_detecter_type_avis_none_si_texte_ambigu():
     """Une page qui enchaine la fin d'un tableau de resultats et un nouvel avis (frequent dans ce
-    bulletin) contient les deux familles de marqueurs - on fait alors confiance au LLM plutot que
-    de trancher au hasard."""
-    avis = _avis_minimal("appel_offre")
+    bulletin) contient les deux familles de marqueurs - retourne None (repli sur le prompt
+    generique, ou le LLM classifie lui-meme) plutot que de trancher au hasard."""
     texte = "Non Conforme / Ecartee du classement. Avis d'appel d'offres ouvert (AAOO) n°2026-042."
-
-    corrige = _corriger_type_avis(avis, texte, "section test")
-
-    assert corrige.type_avis == "appel_offre"
+    assert _detecter_type_avis(texte) is None
 
 
-def test_corriger_type_avis_garde_llm_si_aucun_marqueur():
-    avis = _avis_minimal("autre")
+def test_detecter_type_avis_none_si_aucun_marqueur():
     texte = "Texte quelconque sans marqueur administratif reconnaissable."
-
-    corrige = _corriger_type_avis(avis, texte, "section test")
-
-    assert corrige.type_avis == "autre"
+    assert _detecter_type_avis(texte) is None
 
 
-def test_corriger_type_avis_ecrase_llm_meme_si_resultat_cite_sa_demande_de_prix():
+def test_detecter_type_avis_resultat_meme_si_resultat_cite_sa_demande_de_prix():
     """Bug reel constate lors de l'audit du 09/08/2026 (bulletins 4457-4461, ~15 marches affectes) :
     un resultat de "demande de prix" cite systematiquement en en-tete "Demande de prix n°XXX du
     DATE pour <objet>" pour rappeler de quel appel il presente le resultat - un gabarit identique a
     celui d'un nouvel appel. Avant retrait de ce marqueur trop generique de _MARQUEURS_APPEL_OFFRE,
     cette citation neutralisait a tort le marqueur resultat pourtant present ('Non conforme'),
     rendant la section 'ambigue' et laissant un LLM faillible trancher seul."""
-    avis = _avis_minimal("appel_offre")
     texte = (
         "Demande de prix n°2026-016/MEBAPLN/SG/DMP du 15/06/2026 pour l'entretien et la maintenance "
         "des installations solaires, du circuit electrique, de la plomberie et des appareils "
@@ -382,19 +369,15 @@ def test_corriger_type_avis_ecrase_llm_meme_si_resultat_cite_sa_demande_de_prix(
         "SAID MULTI-SERVICES 8 237 750 15 439 750 - - - - - - Non conforme "
         "Absence des items 90, 91, 92, 93 et 94"
     )
-
-    corrige = _corriger_type_avis(avis, texte, "section test")
-
-    assert corrige.type_avis == "resultat"
+    assert _detecter_type_avis(texte) == "resultat"
 
 
-def test_corriger_type_avis_ecrase_llm_si_attributaire_seul_sans_qualificatif():
+def test_detecter_type_avis_resultat_si_attributaire_seul_sans_qualificatif():
     """Bug reel constate sur le bulletin n°4461 (marche SONATUR n°2026-004/DG-SONATUR/PRM) : le
-    LLM classait 'appel_offre' une section de resultat ou 'Attributaire' apparait seul, comme
-    etiquette de tableau suivie du nom du gagnant, sans le qualificatif 'provisoire'/'definitif'
-    que l'ancien marqueur exigeait - laissant ainsi un marche deja attribue rejoindre le pool des
-    appels d'offres ouverts et generer de fausses alertes 'nouvelle opportunite'."""
-    avis = _avis_minimal("appel_offre")
+    LLM classait a tort 'appel_offre' une section de resultat ou 'Attributaire' apparait seul,
+    comme etiquette de tableau suivie du nom du gagnant, sans le qualificatif 'provisoire'/
+    'definitif' que l'ancien marqueur exigeait - laissant ainsi un marche deja attribue rejoindre
+    le pool des appels d'offres ouverts et generer de fausses alertes 'nouvelle opportunite'."""
     texte = (
         "Reference de publication de resultats de l'AMI : RMP n°4407 du 25/05/2026 (page 13)\n"
         "Date de deliberation : 24 juillet 2026\n"
@@ -402,7 +385,61 @@ def test_corriger_type_avis_ecrase_llm_si_attributaire_seul_sans_qualificatif():
         "IKA SOLUTION LTD pour un montant de vingt-deux millions quatre cent vingt mille "
         "(22 420 000) francs CFA TTC avec un delai d'execution de quatre-vingt-dix (90) jours"
     )
+    assert _detecter_type_avis(texte) == "resultat"
 
-    corrige = _corriger_type_avis(avis, texte, "section test")
 
-    assert corrige.type_avis == "resultat"
+# --- extraire_resultat / extraire_appel_offre (prompts specialises, type deja connu) -----------
+
+
+def test_extraire_resultat_impose_le_type_sans_le_demander_au_llm(monkeypatch):
+    # Le prompt RESULTAT ne demande plus "type_avis" au LLM (deja connu) - _valider_avis_resultat
+    # doit l'imposer lui-meme independamment de ce que contient (ou non) la reponse.
+    reponse = json.dumps([
+        {"organisme": "CARFO", "objet": "Entretien de groupes electrogenes", "type_procedure": None,
+         "montant_min": None, "montant_max": None, "date_avis": None,
+         "entreprise_attributaire_nom": "FZ SERVICES SARL", "montant_attribue": 12000000}
+    ])
+    fake_client = _fake_ollama_client(reponse)
+    monkeypatch.setattr("llm_service.llm_client._get_default_client", lambda: fake_client)
+
+    result = extraire_resultat("texte de resultat")
+
+    assert len(result) == 1
+    assert result[0].type_avis == "resultat"
+    assert result[0].entreprise_attributaire_nom == "FZ SERVICES SARL"
+
+
+def test_extraire_appel_offre_impose_le_type_sans_le_demander_au_llm(monkeypatch):
+    reponse = json.dumps([
+        {"organisme": "SONATUR", "objet": "Acquisition de logiciels", "type_procedure": "demande de prix",
+         "montant_min": None, "montant_max": 42700000, "date_avis": "2026-04-27"}
+    ])
+    fake_client = _fake_ollama_client(reponse)
+    monkeypatch.setattr("llm_service.llm_client._get_default_client", lambda: fake_client)
+
+    result = extraire_appel_offre("texte d'appel d'offres")
+
+    assert len(result) == 1
+    assert result[0].type_avis == "appel_offre"
+    assert result[0].organisme == "SONATUR"
+
+
+def test_extraire_appel_offre_liste_vide_si_pas_un_avis(monkeypatch):
+    fake_client = _fake_ollama_client("[]")
+    monkeypatch.setattr("llm_service.llm_client._get_default_client", lambda: fake_client)
+    assert extraire_appel_offre("texte") == []
+
+
+def test_extraire_resultat_retente_puis_reussit(monkeypatch):
+    reponse_valide = json.dumps([
+        {"organisme": "X", "objet": "Y", "type_procedure": None, "montant_min": None,
+         "montant_max": None, "date_avis": None, "entreprise_attributaire_nom": None,
+         "montant_attribue": None}
+    ])
+    fake_client = _fake_ollama_client("ceci n'est pas du JSON", reponse_valide)
+    monkeypatch.setattr("llm_service.llm_client._get_default_client", lambda: fake_client)
+
+    result = extraire_resultat("texte quelconque")
+
+    assert len(result) == 1
+    assert result[0].type_avis == "resultat"

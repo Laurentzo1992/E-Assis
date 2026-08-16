@@ -19,7 +19,14 @@ from api.database import SessionLocal
 from api.models.backend import AppelOffre, Marche, Publication, Resultat, TypeProcedure
 from api.models.entreprise import Entreprise
 from ingestion import qdrant_store
-from llm_service.extraction_prompts import AvisExtrait, ExtractionEchouee, extraire_avis, parse_llm_date
+from llm_service.extraction_prompts import (
+    AvisExtrait,
+    ExtractionEchouee,
+    extraire_appel_offre,
+    extraire_avis,
+    extraire_resultat,
+    parse_llm_date,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +117,17 @@ def _detecter_type_avis(texte: str) -> Literal["resultat", "appel_offre"] | None
     """Detecte le type d'avis a partir de marqueurs textuels fixes, independamment de toute
     interpretation LLM. Retourne None si le texte est ambigu (les deux familles de marqueurs
     presentes, ex. une page qui enchaine un tableau de resultats puis un nouvel avis - frequent
-    dans ce bulletin) ou si aucun marqueur n'est trouve - dans ces cas, on fait confiance au LLM."""
+    dans ce bulletin) ou si aucun marqueur n'est trouve.
+
+    Route directement vers le prompt d'extraction specialise correspondant (`extraire_resultat`/
+    `extraire_appel_offre`, cf. llm_service/extraction_prompts.py) quand le type est certain, et
+    vers le prompt generique (`extraire_avis`, qui laisse le LLM classifier lui-meme) sinon - cf.
+    boucle principale de `extract_bulletin()`. Avant le 13/08/2026, cette fonction ne servait qu'a
+    CORRIGER a posteriori le type_avis choisi par le LLM (`_corriger_type_avis`, retire) : la
+    classification LLM pouvait rester fausse assez longtemps pour influencer quels champs il
+    cherchait a extraire (ex. ne jamais chercher l'attributaire d'un resultat qu'il croyait etre
+    un appel d'offre), un defaut que la correction du seul label ne reparait pas. Trancher le type
+    AVANT l'appel LLM elimine cette classe d'erreur a la source."""
     texte_normalise = _sans_accents(texte)
     a_resultat = bool(_MARQUEURS_RESULTAT.search(texte_normalise))
     a_appel_offre = bool(_MARQUEURS_APPEL_OFFRE.search(texte_normalise))
@@ -119,17 +136,6 @@ def _detecter_type_avis(texte: str) -> Literal["resultat", "appel_offre"] | None
     if a_appel_offre and not a_resultat:
         return "appel_offre"
     return None
-
-
-def _corriger_type_avis(avis: AvisExtrait, texte_section: str, section_label: str) -> AvisExtrait:
-    detecte = _detecter_type_avis(texte_section)
-    if detecte is not None and detecte != avis.type_avis:
-        logger.warning(
-            "Type d'avis corrige pour la section %r : LLM a dit %r, marqueurs textuels indiquent %r",
-            section_label, avis.type_avis, detecte,
-        )
-        avis = avis.model_copy(update={"type_avis": detecte})
-    return avis
 
 
 class _Section:
@@ -362,11 +368,21 @@ def extract_bulletin(object_name: str) -> int:
     try:
         publication = _get_or_create_publication(db, chunks)
         for i, section in enumerate(groups, start=1):
-            print(f"[{i}/{len(groups)}] extraction : {section.label!r}")
+            # Type tranche AVANT l'appel LLM (marqueurs textuels fiables, cf. _detecter_type_avis)
+            # quand possible : route vers un prompt specialise (schema plus etroit, pas de
+            # classification a faire) plutot que le prompt generique, repli pour les sections
+            # ambigues ou le LLM doit encore trancher lui-meme.
+            type_detecte = _detecter_type_avis(section.texte)
+            if type_detecte == "resultat":
+                extraire = extraire_resultat
+            elif type_detecte == "appel_offre":
+                extraire = extraire_appel_offre
+            else:
+                extraire = extraire_avis
+            print(f"[{i}/{len(groups)}] extraction ({type_detecte or 'generique'}) : {section.label!r}")
             try:
-                avis_list = extraire_avis(section.texte)
+                avis_list = extraire(section.texte)
                 for avis in avis_list:
-                    avis = _corriger_type_avis(avis, section.texte, section.label)
                     if avis.type_avis == "autre":
                         continue
                     _upsert_avis(db, publication, avis, section.page_number)

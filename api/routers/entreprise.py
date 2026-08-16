@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -25,6 +25,11 @@ from api.schemas.entreprise import (
 from api.security import get_current_user
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
+
+# Un abonnement est PAR COMPTE, pas par entreprise (cf. api/models/abonnement.py) : couvre
+# jusqu'a ce nombre d'entreprises pour le meme proprietaire avant de devoir passer a autre chose
+# (pas encore d'offre superieure - la creation est simplement refusee au-dela).
+MAX_ENTREPRISES_PAR_ABONNEMENT = 2
 
 
 # --- /api/entreprise/domaines/ ----------------------------------------------------------------
@@ -140,12 +145,34 @@ def create_entreprise(
     current_user: Utilisateur = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    nb_entreprises_actuelles = db.scalar(
+        select(func.count()).select_from(Entreprise).where(Entreprise.owner_id == current_user.id)
+    )
+    if nb_entreprises_actuelles >= MAX_ENTREPRISES_PAR_ABONNEMENT:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Limite de {MAX_ENTREPRISES_PAR_ABONNEMENT} entreprises par abonnement atteinte. "
+                "Contactez-nous pour gerer plus d'entreprises sur ce compte."
+            ),
+        )
+
     entreprise = Entreprise(
         nom=payload.nom,
         numero_identification=payload.numero_identification,
         adresse=payload.adresse,
         telephone=payload.telephone,
-        email=payload.email,
+        # Pre-rempli avec l'email du compte a la creation (l'entreprise a presque toujours besoin
+        # d'un email de contact, et celui du compte est le seul deja connu a ce stade) - modifiable
+        # ensuite via update_entreprise si le gerant veut recevoir les alertes ailleurs. Les
+        # alertes email utilisent toujours ce champ, jamais l'email du compte directement (cf.
+        # api/scripts/match_and_alert.py) : le garantir non-vide ici evite tout repli conditionnel
+        # plus loin dans le pipeline.
+        email=payload.email or current_user.email,
+        # Pre-rempli avec la langue du compte a la creation (meme logique que `email` juste
+        # au-dessus) - modifiable ensuite via update_entreprise si le gerant veut recevoir les
+        # alertes de cette entreprise dans une autre langue que celle de son interface de compte.
+        langue_alertes=payload.langue_alertes or current_user.langue,
         date_creation=payload.date_creation,
         description=payload.description,
         repnom=payload.repnom,
@@ -158,20 +185,24 @@ def create_entreprise(
     db.refresh(entreprise)
     _apply_relations(db, entreprise, payload.domaine_ids, payload.secteur_ids)
 
-    # Essai gratuit demarre immediatement - pas d'abonnement paye tant qu'aucun paiement confirme
-    # ne l'a prolonge (cf. api/routers/paiement.py). Duree lue en base (table tarifs_abonnement,
-    # modifiable depuis /admin) plutot qu'en variable d'environnement.
-    maintenant = datetime.now(timezone.utc)
-    tarif = get_tarif(db)
-    db.add(
-        Abonnement(
-            entreprise_id=entreprise.id,
-            statut="essai",
-            date_debut_essai=maintenant,
-            date_fin_essai=maintenant + timedelta(days=tarif.essai_gratuit_jours),
+    # Abonnement PAR COMPTE, pas par entreprise (cf. api/models/abonnement.py) : reutilise celui
+    # du proprietaire s'il en a deja un (essai en cours ou abonnement paye), qui couvre alors
+    # aussi cette nouvelle entreprise sans rien recreer - l'essai gratuit ne demarre que pour la
+    # toute premiere entreprise du compte. Duree lue en base (table tarifs_abonnement, modifiable
+    # depuis /admin) plutot qu'en variable d'environnement.
+    a_deja_un_abonnement = db.query(Abonnement).filter(Abonnement.utilisateur_id == current_user.id).first()
+    if a_deja_un_abonnement is None:
+        maintenant = datetime.now(timezone.utc)
+        tarif = get_tarif(db)
+        db.add(
+            Abonnement(
+                utilisateur_id=current_user.id,
+                statut="essai",
+                date_debut_essai=maintenant,
+                date_fin_essai=maintenant + timedelta(days=tarif.essai_gratuit_jours),
+            )
         )
-    )
-    db.commit()
+        db.commit()
 
     db.refresh(entreprise)
     return entreprise
@@ -233,14 +264,29 @@ def update_entreprise(
 ):
     entreprise = _get_owned_or_404(db, current_user, entreprise_id)
     for field in (
-        "nom", "numero_identification", "adresse", "telephone", "email",
+        "nom", "numero_identification", "adresse", "telephone", "email", "langue_alertes",
         "date_creation", "description", "repnom", "repprenom", "rccm",
     ):
         value = getattr(payload, field)
         if value is not None:
             setattr(entreprise, field, value)
     db.commit()
+
+    # Domaines/secteurs actuels AVANT ecrasement par _apply_relations, pour detecter un reel
+    # changement de profil (pas juste un PUT qui renvoie les memes ids) - seul un changement doit
+    # declencher le rattrapage (cf. api/scripts/match_and_alert.py:rattraper_profils_modifies),
+    # sinon chaque simple mise a jour de coordonnees re-analyserait inutilement l'entreprise.
+    domaines_avant = {
+        d for (d,) in db.query(EntrepriseDomaine.domaine_id).filter(EntrepriseDomaine.entreprise_id == entreprise.id)
+    }
+    secteurs_avant = {
+        s for (s,) in db.query(EntrepriseSecteur.secteur_id).filter(EntrepriseSecteur.entreprise_id == entreprise.id)
+    }
     _apply_relations(db, entreprise, payload.domaine_ids, payload.secteur_ids)
+    if set(payload.domaine_ids) != domaines_avant or set(payload.secteur_ids) != secteurs_avant:
+        entreprise.profil_a_rattraper = True
+        db.commit()
+
     db.refresh(entreprise)
     return entreprise
 

@@ -18,6 +18,15 @@ correctif du bug `{}`/`[]` (54 marches, 1 echec - le meilleur des trois testes),
 la consigne explicite de ne jamais inventer, compensees cote deterministe par des filtres
 pre-LLM (cf. api/scripts/extract_bulletin.py, _semble_repertoire_fournisseurs/_semble_trop_courte).
 
+Le 12/08/2026, qwen3:14b (mode raisonnement) teste sur 6 sections reelles du bulletin n°4464 en
+CPU (docker-compose.llm.yml, profil "cpu") : nettement pire que mistral-nemo:12b sur ce meme
+echantillon - 3 avis extraits contre 6, 1 echec par timeout complet (~20 min avant abandon apres
+epuisement des retries, sur une section qui n'a pourtant pris que 69.6s a mistral-nemo:12b), et
+5.5x plus lent en moyenne (354.2s/section contre 64.7s/section). Le temps de "reflexion" du mode
+raisonnement semble consomme sans gain de qualite correspondant sur cette tache d'extraction
+structuree - prolonge le constat deja fait avec qwen2.5:14b. mistral-nemo:12b reste le modele de
+production pour cette tache.
+
 Le 08/08/2026, Gemini et Claude (API cloud) ont ete testes pour reduire ces hallucinations et la
 charge de calcul locale (soupconnee dans plusieurs plantages Docker Desktop le 07/08/2026) - les
 deux abandonnes le jour-meme (quota gratuit Gemini limite a 20 requetes/jour, credit insuffisant
@@ -45,6 +54,15 @@ logger = logging.getLogger(__name__)
 _MODELES: dict[str, str] = {
     "extraction": "mistral-nemo:12b",
     "redaction_whatsapp": "mistral:7b",
+    # mistral:7b initialement, remplace apres constat en reel (bulletin 4466) : jugeait
+    # systematiquement "non pertinent" des correspondances evidentes (ex. "Acquisition de
+    # materiels informatiques" rejete pour un profil listant "Acquisition des equipements,
+    # logiciel, systeme, securite informatique") - la tache demande une nuance ("meme secteur,
+    # formulation differente") que ce modele ne suit pas de facon fiable, meme avec un prompt
+    # explicite. mistral-nemo:12b, deja le modele de production pour l'extraction (tache qui
+    # demande le meme type de jugement nuance), corrige ces faux negatifs en pratique.
+    "verification_pertinence": "mistral-nemo:12b",
+    "traduction": "mistral:7b",
 }
 
 # "ollama" = nom du service dans docker-compose.llm.yml (reseau Docker "backend") ; "localhost"

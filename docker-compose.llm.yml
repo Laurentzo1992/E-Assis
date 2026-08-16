@@ -27,6 +27,29 @@ services:
     networks:
       - backend
 
+  # Variante CPU, memes commandes que "ollama" mais sans reservation GPU - reproduit exactement
+  # le mode de fonctionnement de la prod VPS (CPU-only, cf. project_deployment_infra). Utilisee
+  # aussi en dev quand le GPU local est deja sature par autre chose (constate en reel : ~11 Go/12
+  # Go de VRAM deja pris sans process GPU-lourd identifiable, empechant de charger un modele 9+ Go
+  # dessus) ou pour eviter l'instabilite de l'installation Ollama native Windows (modeles
+  # disparaissant silencieusement de "ollama list" entre deux sessions sans commande de suppression
+  # explicite, constate deux fois le meme jour). Meme port (11434) que "ollama" - ne jamais lancer
+  # les deux profils en meme temps (conflit de port).
+  #   docker compose -f docker-compose.llm.yml --profile cpu up -d ollama-cpu
+  #   docker exec kbbot-ollama-cpu ollama pull mistral:7b
+  ollama-cpu:
+    image: ollama/ollama:latest
+    container_name: kbbot-ollama-cpu
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    profiles:
+      - cpu
+    volumes:
+      - ollama_model_cache:/root/.ollama
+    networks:
+      - backend
+
 networks:
   backend:
     external: true

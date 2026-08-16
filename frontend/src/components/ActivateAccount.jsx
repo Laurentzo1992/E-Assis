@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 
 export default function ActivateAccount() {
+  const { t } = useTranslation();
   const { token } = useParams();
-  const [message, setMessage] = useState("Activation en cours...");
+  const [message, setMessage] = useState(t("activation.inProgress"));
   const navigate = useNavigate();
 
     useEffect(() => {
@@ -14,25 +16,26 @@ export default function ActivateAccount() {
         console.log("Réponse API:", data);
 
         if (res.ok) {
-            setMessage(data.message || "Votre compte a été activé avec succès.");
+            setMessage(data.message || t("activation.success"));
             setTimeout(() => navigate("/connexion"), 3000);
         } else {
             if (data.error && data.error.includes("Activé")) {
-            setMessage("Votre compte est activé. Vous pouvez vous connecter.");
+            setMessage(t("activation.alreadyActive"));
             setTimeout(() => navigate("/connexion"), 3000);
             } else {
-            setMessage(data.error || "Le lien d'activation est invalide ou expiré.");
+            setMessage(data.error || t("activation.genericError"));
             }
         }
         })
-        .catch(() => setMessage("Erreur lors de l'activation du compte."));
+        .catch(() => setMessage(t("activation.fetchError")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, navigate]);
 
   return (
     <div className="d-flex align-items-center justify-content-center p-4 custom-bg">
       <div className="container text-center">
         <div className="custom-card p-4 p-sm-5">
-          <h2 className="h2 fw-bold text-primary-custom mb-3">Activation du compte</h2>
+          <h2 className="h2 fw-bold text-primary-custom mb-3">{t("activation.title")}</h2>
           <p className="text-primary-custom opacity-75">{message}</p>
         </div>
       </div>

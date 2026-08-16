@@ -36,6 +36,7 @@ class EntrepriseResponse(BaseModel):
     adresse: str | None
     telephone: str | None
     email: str | None
+    langue_alertes: str | None = None
     date_creation: date | None
     description: str | None
     repnom: str | None
@@ -53,6 +54,7 @@ class EntrepriseCreateUpdateRequest(BaseModel):
     adresse: str | None = None
     telephone: str | None = None
     email: str | None = None
+    langue_alertes: str | None = None
     date_creation: date | None = None
     description: str | None = None
     repnom: str | None = None

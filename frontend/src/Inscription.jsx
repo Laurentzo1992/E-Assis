@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { User, Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "./components/Navbar";
 import { API_BASE_URL } from "./config";
 import "./style.css"; // Ton fichier CSS personnalisé
 
@@ -33,7 +35,12 @@ const InputField = ({
   </div>
 );
 
+// Le widget Google Identity Services accepte un code locale different du notre pour "mos" (le
+// Moore n'est pas supporte par Google) - repli sur le francais dans ce cas.
+const GOOGLE_LOCALES = { fr: "fr", en: "en", mos: "fr" };
+
 export default function InscriptionBootstrap() {
+  const { t, i18n } = useTranslation();
   const [formData, setFormData] = useState({
     nomRepresentant: "",
     prenomRepresentant: "",
@@ -72,7 +79,7 @@ export default function InscriptionBootstrap() {
             size: "large",
             text: "signup_with", // Texte du bouton (ex: "Sign up with Google")
             width: "100%", // Adapter la largeur
-            locale: "fr", // Langue du bouton
+            locale: GOOGLE_LOCALES[i18n.language] || "fr", // Langue du bouton
           }
         );
       }
@@ -83,7 +90,8 @@ export default function InscriptionBootstrap() {
     return () => {
       document.body.removeChild(script);
     };
-  }, []); // S'exécute une seule fois au montage
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language]); // Recharge le bouton Google si la langue change
 
   // Fonction de rappel pour gérer la réponse de Google Sign-In
   const handleGoogleCredentialResponse = async (response) => {
@@ -108,9 +116,7 @@ export default function InscriptionBootstrap() {
         // setSuccessMessage("Champs pré-remplis avec votre compte Google. Veuillez définir un mot de passe pour finaliser l'inscription."); // Supprimé
       } catch (error) {
         console.error("Erreur lors du décodage du token Google:", error);
-        alert(
-          "Erreur lors du traitement de votre compte Google. Veuillez réessayer."
-        );
+        alert(t("inscription.alerts.googleError"));
       }
     }
   };
@@ -126,24 +132,24 @@ export default function InscriptionBootstrap() {
     const newErrors = {};
 
     if (!formData.nomRepresentant.trim())
-      newErrors.nomRepresentant = "Le nom du représentant est requis";
+      newErrors.nomRepresentant = t("inscription.errors.nom");
     if (!formData.prenomRepresentant.trim())
-      newErrors.prenomRepresentant = "Le prénom du représentant est requis";
+      newErrors.prenomRepresentant = t("inscription.errors.prenom");
 
     if (!formData.email.trim()) {
-      newErrors.email = "L'email est requis";
+      newErrors.email = t("inscription.errors.emailRequired");
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Format d'email invalide";
+      newErrors.email = t("inscription.errors.emailInvalid");
     }
 
     if (!formData.password) {
-      newErrors.password = "Le mot de passe est requis";
+      newErrors.password = t("inscription.errors.passwordRequired");
     }
 
     if (!formData.password2) {
-      newErrors.password2 = "La confirmation du mot de passe est requise";
+      newErrors.password2 = t("inscription.errors.password2Required");
     } else if (formData.password !== formData.password2) {
-      newErrors.password2 = "Les mots de passe ne correspondent pas";
+      newErrors.password2 = t("inscription.errors.passwordMismatch");
     }
 
     return newErrors;
@@ -187,16 +193,16 @@ export default function InscriptionBootstrap() {
         setErrors(apiErrors);
         // Afficher une alerte générique pour les erreurs non liées à un champ spécifique
         if (data.detail) {
-          alert(`Erreur d'inscription: ${data.detail}`);
+          alert(t("inscription.alerts.registrationError", { detail: data.detail }));
         } else if (Object.keys(apiErrors).length === 0) {
-          alert("Une erreur inattendue est survenue lors de l'inscription.");
+          alert(t("inscription.alerts.unexpectedError"));
         }
       } else {
         navigate("/email-verification-sent");
       }
     } catch (error) {
       console.error("Erreur réseau ou serveur:", error);
-      alert("Erreur réseau ou serveur. Veuillez réessayer plus tard.");
+      alert(t("inscription.alerts.networkError"));
     } finally {
       setIsLoading(false);
     }
@@ -209,6 +215,8 @@ export default function InscriptionBootstrap() {
         rel="stylesheet"
       />
 
+      <Navbar />
+
       <div className="d-flex align-items-center justify-content-center p-4 custom-bg">
         <div className="container">
           <div className="row justify-content-center">
@@ -216,10 +224,10 @@ export default function InscriptionBootstrap() {
               <div className="custom-card p-4 p-sm-5">
                 <div className="text-center mb-4">
                   <h2 className="h2 fw-bold text-primary-custom mb-2">
-                    Inscription Entreprise
+                    {t("inscription.title")}
                   </h2>
                   <p className="text-primary-custom opacity-75">
-                    Rejoignez notre plateforme dès aujourd'hui
+                    {t("inscription.subtitle")}
                   </p>
                 </div>
 
@@ -236,7 +244,7 @@ export default function InscriptionBootstrap() {
                     <div className="col-12 col-sm-6">
                       <InputField
                         icon={User}
-                        placeholder="Nom du représentant"
+                        placeholder={t("inscription.placeholders.nom")}
                         value={formData.nomRepresentant}
                         onChange={handleChange("nomRepresentant")}
                         error={errors.nomRepresentant}
@@ -246,7 +254,7 @@ export default function InscriptionBootstrap() {
                     <div className="col-12 col-sm-6">
                       <InputField
                         icon={User}
-                        placeholder="Prénom du représentant"
+                        placeholder={t("inscription.placeholders.prenom")}
                         value={formData.prenomRepresentant}
                         onChange={handleChange("prenomRepresentant")}
                         error={errors.prenomRepresentant}
@@ -258,7 +266,7 @@ export default function InscriptionBootstrap() {
                   <InputField
                     icon={Mail}
                     type="email"
-                    placeholder="Adresse email"
+                    placeholder={t("inscription.placeholders.email")}
                     value={formData.email}
                     onChange={handleChange("email")}
                     error={errors.email}
@@ -275,7 +283,7 @@ export default function InscriptionBootstrap() {
                   <InputField
                     icon={Lock}
                     type="password"
-                    placeholder="Mot de passe"
+                    placeholder={t("inscription.placeholders.password")}
                     value={formData.password}
                     onChange={handleChange("password")}
                     error={errors.password}
@@ -285,7 +293,7 @@ export default function InscriptionBootstrap() {
                   <InputField
                     icon={Lock}
                     type="password"
-                    placeholder="Confirmer le mot de passe"
+                    placeholder={t("inscription.placeholders.password2")}
                     value={formData.password2}
                     onChange={handleChange("password2")}
                     error={errors.password2}
@@ -299,14 +307,14 @@ export default function InscriptionBootstrap() {
                       disabled={isLoading}
                     >
                       {isLoading
-                        ? "Inscription en cours..."
-                        : "Créer le compte entreprise"}
+                        ? t("inscription.submit.loading")
+                        : t("inscription.submit.default")}
                     </button>
                   </div>
                 </form>
                 {/* Séparateur */}
                 <div className="connexion-divider mb-4">
-                  <span>Ou continuer avec</span>
+                  <span>{t("inscription.divider")}</span>
                 </div>
 
                 <div className="row g-2 mb-4">
@@ -318,20 +326,19 @@ export default function InscriptionBootstrap() {
 
                 <div className="text-center mt-4">
                   <p className="small text-primary-custom">
-                    Déjà un compte ?{" "}
+                    {t("inscription.alreadyAccount")}{" "}
                     <a
                       href="/connexion"
                       className="text-orange-custom text-decoration-none fw-medium"
                     >
-                      Se connecter
+                      {t("inscription.login")}
                     </a>
                   </p>
                 </div>
 
                 <div className="text-center mt-3">
                   <p className="small text-primary-custom opacity-75">
-                    En vous inscrivant, vous acceptez nos conditions
-                    d'utilisation et notre politique de confidentialité
+                    {t("inscription.terms")}
                   </p>
                 </div>
               </div>

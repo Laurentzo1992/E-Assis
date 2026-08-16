@@ -20,6 +20,12 @@ dupliquer ces ~2 Go de dependances ML dans une deuxieme image juste pour l'acces
 (sqlalchemy/psycopg2, ajoutes legers a kbbot-ingest a la place). Les deux appellent Ollama
 (llm_service) pour l'extraction/la redaction - service demarre a la demande, cf.
 docker-compose.llm.yml.
+
+rattraper_profils_modifies (api/scripts/rattraper_entreprises.py) est INDEPENDANTE de
+has_new_bulletin : une entreprise qui met a jour ses domaines/secteurs (cf.
+api/routers/entreprise.py, update_entreprise) doit etre rattrapee meme un jour sans nouveau
+bulletin DGCMEF (ex. week-end) - la brancher derriere match_and_alert la ferait sauter par le
+short-circuit des que rien de neuf n'est publie.
 """
 
 import os
@@ -32,7 +38,11 @@ from notifications import DEFAULT_ARGS as default_args
 
 from ingestion.scrape_and_upload import ingest_new_bulletin
 
-INGEST_IMAGE = "kbbot-ingest:local"
+# INGEST_IMAGE repasse par l'environnement (pas fixe en dur) : "kbbot-ingest:local" en dev (build
+# local, cf. docker-compose.yml), "ghcr.io/laurentzo1992/kbbot-ingest:latest" en prod (image
+# publiee par la CI, cf. .github/workflows/build-and-push.yml et docker-compose.prod.yml) - a
+# definir dans le .env du VPS, sinon le DAG tenterait de lancer une image qui n'existe pas la-bas.
+INGEST_IMAGE = os.environ.get("INGEST_IMAGE", "kbbot-ingest:local")
 INGEST_NETWORK = "kbbot_backend"
 
 # DockerOperator lance le conteneur directement via l'API Docker, sans passer par
@@ -53,9 +63,9 @@ INGEST_ENVIRONMENT = {
 
 # extract_structured_data/match_and_alert : besoin de Postgres + Ollama en plus de Qdrant, pas de
 # MinIO/vision-ocr (ils ne touchent jamais au PDF source, seulement aux chunks deja vectorises).
-# OLLAMA_HOST est repasse depuis l'environnement (pas fixe en dur) : "http://ollama:11434" pour
-# le service conteneurise de docker-compose.llm.yml, ou "http://host.docker.internal:11434" pour
-# une instance Ollama deja native sur la machine (cas verifie en reel sur ce poste).
+# OLLAMA_HOST est repasse depuis l'environnement (pas fixe en dur) : "http://kbbot-ollama-cpu:11434"
+# sur ce poste (docker-compose.llm.yml, profil "cpu" - instance native Windows abandonnee le
+# 12/08/2026, instable), ou "http://ollama:11434" pour le profil "gpu" du meme fichier.
 _ANALYSE_ENV_KEYS = (
     "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB", "JWT_SECRET_KEY", "GOOGLE_CLIENT_ID",
     "OLLAMA_HOST", "WHATSAPP_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_API_VERSION",
@@ -77,7 +87,13 @@ ANALYSE_ENVIRONMENT = {
 
 @dag(
     dag_id="dag_kbbot_quotidien",
-    schedule="@daily",
+    # Toutes les 4h (pas @daily) : DGCMEF ne publie pas forcement son bulletin avant minuit -
+    # constate en reel le 14/08/2026, bulletin n°4466 publie apres le passage quotidien de minuit,
+    # donc pas traite avant le lendemain (alertes retardees d'une journee entiere). Sans impact sur
+    # la charge : scrape_and_archive detecte "rien de nouveau" via _already_archived en quelques
+    # secondes (cf. has_new_bulletin) - la plupart des passages toutes les 4h se terminent donc
+    # aussi vite qu'avant, seul un vrai nouveau bulletin declenche le pipeline complet.
+    schedule="0 */4 * * *",
     start_date=pendulum.datetime(2026, 1, 1, tz="UTC"),
     catchup=False,
     default_args=default_args,
@@ -146,8 +162,26 @@ def dag_kbbot_quotidien():
         mounts=[Mount(source="kbbot_ingest_model_cache", target="/root/.cache", type="volume")],
     )
 
+    # retries=0 : meme raisonnement que match_and_alert - un rattrapage manque un jour sera
+    # retente au prochain passage quotidien (l'entreprise reste marquee profil_a_rattraper tant
+    # qu'elle n'a pas ete traitee avec succes).
+    rattraper_profils_modifies = DockerOperator(
+        task_id="rattraper_profils_modifies",
+        image=INGEST_IMAGE,
+        command="api.scripts.rattraper_entreprises",
+        environment=ANALYSE_ENVIRONMENT,
+        network_mode=INGEST_NETWORK,
+        docker_url="unix://var/run/docker.sock",
+        auto_remove="success",
+        mount_tmp_dir=False,
+        retries=0,
+        execution_timeout=pendulum.duration(hours=1),
+        mounts=[Mount(source="kbbot_ingest_model_cache", target="/root/.cache", type="volume")],
+    )
+
     object_name = scrape_and_archive()
     has_new_bulletin(object_name) >> vectorize_bulletin >> extract_structured_data >> match_and_alert
+    rattraper_profils_modifies
 
 
 dag_kbbot_quotidien()

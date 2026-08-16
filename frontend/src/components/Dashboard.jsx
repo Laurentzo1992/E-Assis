@@ -1,10 +1,13 @@
 // Dashboard.jsx
 
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import { apiRequest, logout, setNavigateInstance } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 import { Briefcase, Bell, CalendarClock, Home, User } from "lucide-react";
 import { API_BASE_URL } from "../config";
+import LanguageSwitcher, { LANGUE_SYNC_DONE_KEY } from "./LanguageSwitcher";
 
 // Select multiple avec recherche (type Select2), en composant maison plutot qu'une dependance
 // externe : react-select impliquerait une friction de peer-dependency avec React 19 (deja utilise
@@ -13,6 +16,7 @@ import { API_BASE_URL } from "../config";
 // Interface volontairement generique (tableau d'IDs selectionnes) pour servir les deux formulaires
 // entreprise (creation : IDs bruts : profil : objets complets) sans dupliquer le composant.
 function SearchableMultiSelect({ options, selectedIds, onChange, placeholder, getId, getLabel }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -58,7 +62,7 @@ function SearchableMultiSelect({ options, selectedIds, onChange, placeholder, ge
               type="button"
               className="btn-close btn-close-white"
               style={{ fontSize: "0.55rem" }}
-              aria-label={`Retirer ${getLabel(opt)}`}
+              aria-label={t("dashboard.common.retirerLabel", { label: getLabel(opt) })}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleOption(getId(opt));
@@ -82,7 +86,7 @@ function SearchableMultiSelect({ options, selectedIds, onChange, placeholder, ge
           style={{ maxHeight: "220px", overflowY: "auto" }}
         >
           {filteredOptions.length === 0 ? (
-            <span className="dropdown-item-text text-muted">Aucun résultat</span>
+            <span className="dropdown-item-text text-muted">{t("dashboard.common.aucunResultat")}</span>
           ) : (
             filteredOptions.map((opt) => (
               <button
@@ -108,6 +112,7 @@ function SearchableMultiSelect({ options, selectedIds, onChange, placeholder, ge
 }
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   // --- États généraux du tableau de bord ---
   const [activeSection, setActiveSection] = useState("accueil");
   const [sidebarOpen, setSidebarOpen] = useState(false); // État pour la barre latérale mobile
@@ -182,7 +187,7 @@ const Dashboard = () => {
   const [loadingResultats, setLoadingResultats] = useState(true);
   const [errorResultats, setErrorResultats] = useState(null);
 
-  const [lastReviewDate, setLastReviewDate] = useState("Non disponible");
+  const [lastReviewDate, setLastReviewDate] = useState(t("dashboard.accueil.dateNonDisponible"));
 
   // --- États pour l'abonnement (essai gratuit / actif / expiré) de l'entreprise active ---
   const [subscription, setSubscription] = useState(null);
@@ -223,6 +228,32 @@ const Dashboard = () => {
   useEffect(() => {
     setNavigateInstance(navigate);
   }, [navigate]);
+
+  // --- Synchronisation de la langue du compte -> appareil (au chargement du Dashboard) ---
+  // Objectif : un compte qui se connecte sur un nouvel appareil retrouve sa langue preferee.
+  // On n'ecrase jamais un choix de langue explicite deja fait sur CET appareil : la cle
+  // LANGUE_SYNC_DONE_KEY n'est posee QUE par LanguageSwitcher (changement manuel), jamais ici -
+  // tant qu'aucun choix manuel n'a ete fait sur cet appareil, chaque chargement du Dashboard
+  // retente la synchronisation (sans effet si la langue du compte est deja active).
+  useEffect(() => {
+    const syncLangueDuCompte = async () => {
+      try {
+        if (localStorage.getItem(LANGUE_SYNC_DONE_KEY)) return;
+        const response = await apiRequest(`${API_BASE_URL}/api/auth/profile/`);
+        if (!response || !response.ok) return;
+        const data = await response.json();
+        if (data.langue && data.langue !== i18n.language) {
+          i18n.changeLanguage(data.langue);
+        }
+      } catch (error) {
+        // Best-effort : si le backend ne renvoie pas encore ce champ ou est injoignable, on
+        // garde simplement la langue actuellement active (localStorage/navigateur).
+        console.error("Erreur lors de la synchronisation de la langue du compte:", error);
+      }
+    };
+    syncLangueDuCompte();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- Fonctions de récupération des données de base (Domaines, Secteurs) ---
   const fetchDomaines = async () => {
@@ -393,7 +424,7 @@ const Dashboard = () => {
       );
       setNewDomaineInputAdd("");
     } catch (error) {
-      showCustomAlert(`Échec de l'ajout du domaine : ${error.message}`, "danger");
+      showCustomAlert(t("dashboard.common.echecAjoutDomaineInline", { message: error.message }), "danger");
     }
   };
 
@@ -440,7 +471,7 @@ const Dashboard = () => {
       );
       setNewDomaineInputProfile("");
     } catch (error) {
-      showCustomAlert(`Échec de l'ajout du domaine : ${error.message}`, "danger");
+      showCustomAlert(t("dashboard.common.echecAjoutDomaineInline", { message: error.message }), "danger");
     }
   };
 
@@ -451,7 +482,7 @@ const Dashboard = () => {
     // un <div>), donc l'attribut HTML `required` ne peut plus etre valide par le navigateur -
     // controle manuel a la place.
     if (addEntrepriseData.secteursActivite.length === 0) {
-      showCustomAlert("Veuillez sélectionner au moins un secteur d'activité.", "danger");
+      showCustomAlert(t("dashboard.modales.ajoutEntreprise.erreurSecteurRequis"), "danger");
       return;
     }
     setLoadingActiveCompany(true);
@@ -518,13 +549,13 @@ const Dashboard = () => {
         domainesActivite: newCompany.domaines || [],
       });
       showCustomAlert(
-        "Entreprise créée et définie comme active avec succès !",
+        t("dashboard.modales.ajoutEntreprise.succes"),
         "success"
       );
     } catch (error) {
       console.error("Erreur lors de la création de l'entreprise:", error);
       showCustomAlert(
-        `Échec de la création de l'entreprise: ${error.message}`,
+        t("dashboard.modales.ajoutEntreprise.echec", { message: error.message }),
         "danger"
       );
     } finally {
@@ -535,7 +566,7 @@ const Dashboard = () => {
   const handleSubmitUpdateProfile = async (e) => {
     e.preventDefault();
     if (!activeCompany) {
-      showCustomAlert("Aucune entreprise active à mettre à jour.", "danger");
+      showCustomAlert(t("dashboard.profil.entreprise.erreurAucuneActive"), "danger");
       return;
     }
     setLoadingProfileUpdate(true);
@@ -582,11 +613,11 @@ const Dashboard = () => {
         secteursActivite: updatedCompany.secteurs || [],
         domainesActivite: updatedCompany.domaines || [],
       });
-      showCustomAlert("Profil mis à jour avec succès !", "success");
+      showCustomAlert(t("dashboard.profil.entreprise.succesMiseAJour"), "success");
     } catch (error) {
       console.error("Erreur lors de la mise à jour du profil :", error);
       setErrorProfileUpdate(error);
-      showCustomAlert(`Erreur: ${error.message}`, "danger");
+      showCustomAlert(t("dashboard.common.erreurAvecMessage", { message: error.message }), "danger");
     } finally {
       setLoadingProfileUpdate(false);
     }
@@ -597,14 +628,14 @@ const Dashboard = () => {
     setErrorPasswordUpdate(null);
     if (newPassword !== confirmNewPassword) {
       showCustomAlert(
-        "Les nouveaux mots de passe ne correspondent pas.",
+        t("dashboard.profil.motDePasse.erreurMismatch"),
         "danger"
       );
       return;
     }
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       showCustomAlert(
-        "Veuillez remplir tous les champs du mot de passe.",
+        t("dashboard.profil.motDePasse.erreurChampsRequis"),
         "danger"
       );
       return;
@@ -632,7 +663,7 @@ const Dashboard = () => {
         );
       }
 
-      showCustomAlert("Mot de passe mis à jour avec succès !", "success");
+      showCustomAlert(t("dashboard.profil.motDePasse.succes"), "success");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
@@ -640,7 +671,7 @@ const Dashboard = () => {
       console.error("Erreur lors du changement de mot de passe :", error);
       setErrorPasswordUpdate(error);
       showCustomAlert(
-        `Échec du changement de mot de passe : ${error.message}`,
+        t("dashboard.profil.motDePasse.echec", { message: error.message }),
         "danger"
       );
     } finally {
@@ -662,11 +693,11 @@ const Dashboard = () => {
       if (!response.ok) throw new Error(`Erreur: ${response.status}`);
       await fetchSecteurs();
       setNewSecteurNom("");
-      showCustomAlert("Secteur ajouté avec succès !", "success");
+      showCustomAlert(t("dashboard.profil.secteurs.succesAjout"), "success");
     } catch (error) {
       console.error("Erreur lors de l'ajout du secteur:", error);
       showCustomAlert(
-        `Échec de l'ajout du secteur: ${error.message}`,
+        t("dashboard.profil.secteurs.echecAjout", { message: error.message }),
         "danger"
       );
     }
@@ -686,11 +717,11 @@ const Dashboard = () => {
       if (!response.ok) throw new Error(`Erreur: ${response.status}`);
       await fetchDomaines();
       setNewDomaineLibelle("");
-      showCustomAlert("Domaine ajouté avec succès !", "success");
+      showCustomAlert(t("dashboard.profil.domaines.succesAjout"), "success");
     } catch (error) {
       console.error("Erreur lors de l'ajout du domaine:", error);
       showCustomAlert(
-        `Échec de l'ajout du domaine: ${error.message}`,
+        t("dashboard.profil.domaines.echecAjout", { message: error.message }),
         "danger"
       );
     }
@@ -718,7 +749,7 @@ const Dashboard = () => {
           }, new Date(0));
           setLastReviewDate(latestDate.toLocaleDateString("fr-FR"));
         } else {
-          setLastReviewDate("Non disponible");
+          setLastReviewDate(t("dashboard.accueil.dateNonDisponible"));
         }
       } catch (error) {
         console.error(
@@ -731,6 +762,7 @@ const Dashboard = () => {
     if (activeCompany) {
       fetchDerniereRevue();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCompany]);
 
   // Effet pour l'abonnement (essai/actif/expiré) - Se déclenche quand l'entreprise active change,
@@ -792,7 +824,7 @@ const Dashboard = () => {
       window.location.href = url;
     } catch (error) {
       console.error("Erreur lors de l'initiation du paiement:", error);
-      showCustomAlert(`Impossible de démarrer le paiement : ${error.message}`, "danger");
+      showCustomAlert(t("dashboard.profil.abonnement.echecPaiement", { message: error.message }), "danger");
       setInitiatingPayment(false);
     }
   };
@@ -936,7 +968,7 @@ const Dashboard = () => {
 
       <div className={`sidebar ${sidebarOpen ? "show" : ""}`}>
         <div className="sidebar-header">
-          <h4>VeilleMarches Pro</h4>
+          <h4>{t("dashboard.sidebar.brand")}</h4>
           <button
             className="btn-close-sidebar d-md-none"
             onClick={() => setSidebarOpen(false)}
@@ -951,15 +983,14 @@ const Dashboard = () => {
           {/* Sélecteur d'entreprise active */}
           <div className="mb-3 text-center">
             {loadingUserCompanies ? (
-              <p className="text-muted mb-1">Chargement des entreprises...</p>
+              <p className="text-muted mb-1">{t("dashboard.sidebar.chargementEntreprises")}</p>
             ) : errorUserCompanies ? (
               <p className="text-danger mb-1">
-                Erreur de chargement des entreprises:{" "}
-                {errorUserCompanies.message}
+                {t("dashboard.sidebar.erreurChargementEntreprises", { message: errorUserCompanies.message })}
               </p>
             ) : userCompanies.length > 0 ? (
               <>
-                <p className="text-muted mb-1">Entreprise active :</p>
+                <p className="text-muted mb-1">{t("dashboard.sidebar.entrepriseActiveLabel")}</p>
                 <select
                   className="form-select mb-2"
                   value={activeCompany ? activeCompany.id : ""}
@@ -1000,7 +1031,7 @@ const Dashboard = () => {
                           domainesActivite: updatedActiveCompany.domaines || [],
                         });
                         showCustomAlert(
-                          "Entreprise active changée avec succès !",
+                          t("dashboard.sidebar.succesChangementEntreprise"),
                           "success"
                         );
                       } catch (error) {
@@ -1009,14 +1040,14 @@ const Dashboard = () => {
                           error
                         );
                         showCustomAlert(
-                          `Échec du changement d'entreprise active: ${error.message}`,
+                          t("dashboard.sidebar.echecChangementEntreprise", { message: error.message }),
                           "danger"
                         );
                       }
                     }
                   }}
                 >
-                  <option value="">Sélectionner une entreprise</option>
+                  <option value="">{t("dashboard.sidebar.selectionnerEntreprise")}</option>
                   {userCompanies.map((company) => (
                     <option key={company.id} value={company.id}>
                       {company.nom}
@@ -1025,7 +1056,7 @@ const Dashboard = () => {
                 </select>
               </>
             ) : (
-              <p className="text-muted mb-1">Aucune entreprise trouvée.</p>
+              <p className="text-muted mb-1">{t("dashboard.sidebar.aucuneEntreprise")}</p>
             )}
           </div>
 
@@ -1043,7 +1074,7 @@ const Dashboard = () => {
             >
               <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
             </svg>
-            Ajouter une entreprise
+            {t("dashboard.sidebar.ajouterEntreprise")}
           </button>
 
           <nav className="sidebar-nav">
@@ -1067,7 +1098,7 @@ const Dashboard = () => {
                 <path d="m8 3.293 6 6V13.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5V9.293l6-6zm5-.793V6l-2-2V2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5z" />
                 <path d="M7.293 1.5a1 1 0 0 1 1.414 0l6.647 6.646a.5.5 0 0 1-.708.708L8 2.207 1.354 8.854a.5.5 0 1 1-.708-.708L7.293 1.5z" />
               </svg>
-              Accueil
+              {t("dashboard.sidebar.navAccueil")}
             </button>
             <button
               type="button"
@@ -1088,7 +1119,7 @@ const Dashboard = () => {
               >
                 <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z" />
               </svg>
-              Alertes & Résultats
+              {t("dashboard.sidebar.navAlertes")}
             </button>
             <button
               type="button"
@@ -1109,12 +1140,15 @@ const Dashboard = () => {
               >
                 <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z" />
               </svg>
-              Profil
+              {t("dashboard.sidebar.navProfil")}
             </button>
           </nav>
         </div>
 
         <div className="sidebar-footer">
+          <div className="mb-2 text-center">
+            <LanguageSwitcher />
+          </div>
           <button className="btn btn-outline-light w-100" onClick={logout}>
             <svg
               width="16"
@@ -1132,7 +1166,7 @@ const Dashboard = () => {
                 d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"
               />
             </svg>
-            Déconnexion
+            {t("dashboard.sidebar.deconnexion")}
           </button>
         </div>
       </div>
@@ -1149,7 +1183,7 @@ const Dashboard = () => {
           />
         </svg>
       </button>
-      <h5 className="m-0">VeilleMarches Pro</h5>
+      <h5 className="m-0">{t("dashboard.sidebar.brand")}</h5>
     </div>
   );
 
@@ -1164,7 +1198,7 @@ const Dashboard = () => {
         onClick={() => setActiveSection("accueil")}
       >
         <Home size={20} />
-        <span>Accueil</span>
+        <span>{t("dashboard.sidebar.navAccueil")}</span>
       </button>
       <button
         type="button"
@@ -1172,7 +1206,7 @@ const Dashboard = () => {
         onClick={() => setActiveSection("alertes")}
       >
         <Bell size={20} />
-        <span>Alertes</span>
+        <span>{t("dashboard.sidebar.navAlertesCourt")}</span>
       </button>
       <button
         type="button"
@@ -1180,7 +1214,7 @@ const Dashboard = () => {
         onClick={() => setActiveSection("profil")}
       >
         <User size={20} />
-        <span>Profil</span>
+        <span>{t("dashboard.sidebar.navProfil")}</span>
       </button>
     </nav>
   );
@@ -1195,8 +1229,8 @@ const Dashboard = () => {
     const variante = subscription.statut === "essai" ? "alert-warning" : "alert-danger";
     const message =
       subscription.statut === "essai"
-        ? `Essai gratuit — ${subscription.jours_restants} jour(s) restant(s) pour ${activeCompany.nom}.`
-        : `Votre essai/abonnement pour ${activeCompany.nom} a expiré. Abonnez-vous pour continuer à recevoir des alertes.`;
+        ? t("dashboard.common.bannerEssai", { jours: subscription.jours_restants, nom: activeCompany.nom })
+        : t("dashboard.common.bannerExpire", { nom: activeCompany.nom });
 
     return (
       <div className={`alert ${variante} d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3`}>
@@ -1207,7 +1241,7 @@ const Dashboard = () => {
           onClick={handleSouscrire}
           disabled={initiatingPayment}
         >
-          {initiatingPayment ? "Redirection..." : "S'abonner"}
+          {initiatingPayment ? t("dashboard.common.redirection") : t("dashboard.common.sabonner")}
         </button>
       </div>
     );
@@ -1216,20 +1250,19 @@ const Dashboard = () => {
   const renderAccueil = () => (
     <div className="main-content">
       <div className="content-header">
-        <h2>Tableau de bord</h2>
-        <p className="text-muted">Vue d'overview de votre activité de veille</p>
+        <h2>{t("dashboard.accueil.titre")}</h2>
+        <p className="text-muted">{t("dashboard.accueil.sousTitre")}</p>
       </div>
 
       {loadingActiveCompany ? (
-        <p>Chargement des données de l'entreprise...</p>
+        <p>{t("dashboard.common.chargementDonneesEntreprise")}</p>
       ) : errorActiveCompany ? (
         <div className="alert alert-danger">
-          Erreur lors du chargement de l'entreprise :{" "}
-          {errorActiveCompany.message}. Veuillez recharger la page.
+          {t("dashboard.common.erreurChargementEntreprise", { message: errorActiveCompany.message })}
         </div>
       ) : !activeCompany ? (
         <div className="alert alert-info">
-          Veuillez créer votre entreprise pour accéder au tableau de bord.
+          {t("dashboard.accueil.pasEntreprise")}
         </div>
       ) : (
         <>
@@ -1241,10 +1274,10 @@ const Dashboard = () => {
                     <Briefcase size={22} />
                   </div>
                   {loadingAlertes ? (
-                    <p>Chargement...</p>
+                    <p>{t("dashboard.common.chargementCourt")}</p>
                   ) : errorAlertes ? (
                     <p className="text-danger">
-                      Erreur de chargement: {errorAlertes.message}
+                      {t("dashboard.common.erreurChargementCourt", { message: errorAlertes.message })}
                     </p>
                   ) : (
                     <h3 className="card-title">
@@ -1262,7 +1295,7 @@ const Dashboard = () => {
                     </h3>
                   )}
                   <p className="card-text">
-                    Appels d'offres ce mois (pour {activeCompany.nom})
+                    {t("dashboard.accueil.kpiAppelsOffres", { nom: activeCompany.nom })}
                   </p>
                 </div>
               </div>
@@ -1274,10 +1307,10 @@ const Dashboard = () => {
                     <Bell size={22} />
                   </div>
                   {loadingAlertes ? (
-                    <p>Chargement...</p>
+                    <p>{t("dashboard.common.chargementCourt")}</p>
                   ) : errorAlertes ? (
                     <p className="text-danger">
-                      Erreur de chargement: {errorAlertes.message}
+                      {t("dashboard.common.erreurChargementCourt", { message: errorAlertes.message })}
                     </p>
                   ) : (
                     <h3 className="card-title">
@@ -1285,7 +1318,7 @@ const Dashboard = () => {
                     </h3>
                   )}
                   <p className="card-text">
-                    Alertes non lues (pour {activeCompany.nom})
+                    {t("dashboard.accueil.kpiAlertesNonLues", { nom: activeCompany.nom })}
                   </p>
                 </div>
               </div>
@@ -1299,7 +1332,7 @@ const Dashboard = () => {
                   {/* Affichage de la date de dernière revue importée */}
                   <h3 className="card-title">{lastReviewDate}</h3>
                   <p className="card-text">
-                    Date de la dernière revue importée
+                    {t("dashboard.accueil.kpiDerniereRevue")}
                   </p>
                 </div>
               </div>
@@ -1308,7 +1341,7 @@ const Dashboard = () => {
 
           <div className="card">
             <div className="card-header">
-              <h5 className="mb-0">Actions rapides</h5>
+              <h5 className="mb-0">{t("dashboard.accueil.actionsRapides")}</h5>
             </div>
             <div className="card-body">
               <div className="row">
@@ -1317,7 +1350,7 @@ const Dashboard = () => {
                     className="btn btn-cta w-100"
                     onClick={() => setActiveSection("profil")}
                   >
-                    Modifier les paramètres du compte
+                    {t("dashboard.accueil.btnModifierParametres")}
                   </button>
                 </div>
                 <div className="col-lg-6 col-md-6 mb-2">
@@ -1325,7 +1358,7 @@ const Dashboard = () => {
                     className="btn btn-cta w-100"
                     onClick={() => setActiveSection("alertes")}
                   >
-                    Voir dernières alertes
+                    {t("dashboard.accueil.btnVoirAlertes")}
                   </button>
                 </div>
               </div>
@@ -1339,22 +1372,20 @@ const Dashboard = () => {
   const renderAlertes = () => (
     <div className="main-content">
       <div className="content-header">
-        <h2>Alertes & Résultats</h2>
+        <h2>{t("dashboard.alertes.titre")}</h2>
         <p className="text-muted">
-          Suivi des notifications et résultats de candidatures
+          {t("dashboard.alertes.sousTitre")}
         </p>
       </div>
       {loadingActiveCompany ? (
-        <p>Chargement des données de l'entreprise...</p>
+        <p>{t("dashboard.common.chargementDonneesEntreprise")}</p>
       ) : errorActiveCompany ? (
         <div className="alert alert-danger">
-          Erreur lors du chargement de l'entreprise :{" "}
-          {errorActiveCompany.message}. Veuillez recharger la page.
+          {t("dashboard.common.erreurChargementEntreprise", { message: errorActiveCompany.message })}
         </div>
       ) : !activeCompany ? (
         <div className="alert alert-info">
-          Veuillez créer votre entreprise pour accéder à vos alertes et
-          résultats.
+          {t("dashboard.alertes.pasEntreprise")}
         </div>
       ) : (
         <div className="row">
@@ -1362,19 +1393,18 @@ const Dashboard = () => {
             <div className="card">
               <div className="card-header">
                 <h5 className="mb-0">
-                  Alertes reçues (pour {activeCompany.nom})
+                  {t("dashboard.alertes.titreCarteAlertes", { nom: activeCompany.nom })}
                 </h5>
               </div>
               <div className="card-body">
                 {loadingAlertes ? (
-                  <p>Chargement des alertes...</p>
+                  <p>{t("dashboard.alertes.chargementAlertes")}</p>
                 ) : errorAlertes ? (
                   <div className="alert alert-danger">
-                    Erreur lors du chargement des alertes :{" "}
-                    {errorAlertes.message}
+                    {t("dashboard.alertes.erreurChargementAlertes", { message: errorAlertes.message })}
                   </div>
                 ) : alertesApi.length === 0 ? (
-                  <p>Aucune alerte trouvée pour votre entreprise.</p>
+                  <p>{t("dashboard.alertes.aucuneAlerte")}</p>
                 ) : (
                   [...alertesApi]
                     .sort(
@@ -1390,24 +1420,24 @@ const Dashboard = () => {
                         <div className="mb-2 mb-sm-0">
                           <h6 className="mb-1">
                             {!alerte.lu && (
-                              <span className="badge bg-danger me-2">Nouveau</span>
+                              <span className="badge bg-danger me-2">{t("dashboard.alertes.badgeNouveau")}</span>
                             )}
-                            {alerte.type_alerte}: {alerte.contenu_alerte}
+                            {alerte.type_alerte === "marche" ? t("dashboard.alertes.typeOffre") : alerte.type_alerte}: {alerte.contenu_alerte}
                           </h6>
                           <small className="text-muted">
                             {new Date(alerte.date_alerte).toLocaleDateString(
                               "fr-FR"
                             )}{" "}
-                            - Canal: {alerte.canal_alerte}
+                            - {t("dashboard.alertes.canal")}: {alerte.canal_alerte}
                           </small>
                           {alerte.publication && (
                             <small className="text-muted d-block mt-1">
-                              Publication: {alerte.publication.titre}
+                              {t("dashboard.alertes.publicationLabel")}: {alerte.publication.titre}
                             </small>
                           )}
                           {alerte.entreprise && (
                             <small className="text-muted d-block">
-                              Entreprise: {alerte.entreprise.nom}
+                              {t("dashboard.alertes.entrepriseLabel")}: {alerte.entreprise.nom}
                             </small>
                           )}
                         </div>
@@ -1422,7 +1452,7 @@ const Dashboard = () => {
                               )
                             }
                           >
-                            Voir le bulletin
+                            {t("dashboard.alertes.voirBulletin")}
                           </button>
                         )}
                       </div>
@@ -1435,19 +1465,18 @@ const Dashboard = () => {
             <div className="card">
               <div className="card-header">
                 <h5 className="mb-0">
-                  Résultats récents (pour {activeCompany.nom})
+                  {t("dashboard.alertes.titreCarteResultats", { nom: activeCompany.nom })}
                 </h5>
               </div>
               <div className="card-body">
                 {loadingResultats ? (
-                  <p>Chargement des résultats...</p>
+                  <p>{t("dashboard.alertes.chargementResultats")}</p>
                 ) : errorResultats ? (
                   <div className="alert alert-danger">
-                    Erreur lors du chargement des résultats :{" "}
-                    {errorResultats.message}
+                    {t("dashboard.alertes.erreurChargementResultats", { message: errorResultats.message })}
                   </div>
                 ) : resultatsApi.length === 0 ? (
-                  <p>Aucun résultat trouvé pour votre entreprise.</p>
+                  <p>{t("dashboard.alertes.aucunResultat")}</p>
                 ) : (
                   [...resultatsApi]
                     .sort(
@@ -1474,24 +1503,24 @@ const Dashboard = () => {
                             {resultat.entreprise_attributaire &&
                             resultat.entreprise_attributaire.id ===
                               activeCompany.id
-                              ? "Retenu"
-                              : "Non retenu"}
+                              ? t("dashboard.alertes.retenu")
+                              : t("dashboard.alertes.nonRetenu")}
                           </span>
                         </div>
                         <small className="text-muted d-block">
-                          Résultat publié le{" "}
+                          {t("dashboard.alertes.resultatPublieLe")}{" "}
                           {new Date(
                             resultat.date_attribution
                           ).toLocaleDateString("fr-FR")}
                         </small>
                         <small className="text-muted d-block">
-                          Attributaire:{" "}
+                          {t("dashboard.alertes.attributaireLabel")}:{" "}
                           {resultat.entreprise_attributaire
                             ? resultat.entreprise_attributaire.nom
-                            : resultat.entreprise_attributaire_nom || "N/A"}
+                            : resultat.entreprise_attributaire_nom || t("dashboard.common.nonApplicable")}
                         </small>
                         <small className="text-muted d-block">
-                          Montant attribué: {resultat.montant_attribue}
+                          {t("dashboard.alertes.montantAttribueLabel")}: {resultat.montant_attribue}
                         </small>
                         <a
                           href={resultat.marche.publication.source}
@@ -1499,7 +1528,7 @@ const Dashboard = () => {
                           rel="noopener noreferrer"
                           className="small"
                         >
-                          Voir l'annonce officielle
+                          {t("dashboard.alertes.voirAnnonce")}
                         </a>
                       </div>
                     ))
@@ -1515,58 +1544,60 @@ const Dashboard = () => {
   const renderProfil = () => (
     <div className="main-content">
       <div className="content-header">
-        <h2>Profil</h2>
-        <p className="text-muted">Gestion des informations de l'entreprise</p>
+        <h2>{t("dashboard.profil.titre")}</h2>
+        <p className="text-muted">{t("dashboard.profil.sousTitre")}</p>
       </div>
 
       {loadingActiveCompany ? (
-        <p>Chargement du profil de l'entreprise...</p>
+        <p>{t("dashboard.profil.chargementProfil")}</p>
       ) : errorActiveCompany ? (
         <div className="alert alert-danger">
-          Erreur lors du chargement du profil : {errorActiveCompany.message}.
-          Veuillez recharger la page.
+          {t("dashboard.profil.erreurChargementProfil", { message: errorActiveCompany.message })}
         </div>
       ) : !activeCompany ? (
         <div className="alert alert-info">
-          Veuillez créer votre entreprise pour gérer votre profil.
+          {t("dashboard.profil.pasEntreprise")}
         </div>
       ) : (
         <div className="row">
           <div className="col-lg-8 mb-4">
             <div className="card mb-4">
               <div className="card-header">
-                <h5 className="mb-0">Abonnement</h5>
+                <h5 className="mb-0">{t("dashboard.profil.abonnement.titre")}</h5>
               </div>
               <div className="card-body">
                 {loadingSubscription ? (
-                  <p className="mb-0">Chargement de l'abonnement...</p>
+                  <p className="mb-0">{t("dashboard.profil.abonnement.chargement")}</p>
                 ) : errorSubscription ? (
                   <p className="text-danger mb-0">
-                    Erreur de chargement de l'abonnement : {errorSubscription.message}
+                    {t("dashboard.profil.abonnement.erreur", { message: errorSubscription.message })}
                   </p>
                 ) : !subscription ? (
-                  <p className="text-muted mb-0">Aucune information d'abonnement disponible.</p>
+                  <p className="text-muted mb-0">{t("dashboard.profil.abonnement.aucuneInfo")}</p>
                 ) : (
                   <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
                     <div>
                       {subscription.statut === "essai" && (
                         <p className="mb-0">
-                          <span className="badge bg-warning text-dark me-2">Essai gratuit</span>
-                          {subscription.jours_restants} jour(s) restant(s), jusqu'au{" "}
-                          {new Date(subscription.date_fin_essai).toLocaleDateString("fr-FR")}.
+                          <span className="badge bg-warning text-dark me-2">{t("dashboard.profil.abonnement.badgeEssai")}</span>
+                          {t("dashboard.profil.abonnement.essaiTexte", {
+                            jours: subscription.jours_restants,
+                            date: new Date(subscription.date_fin_essai).toLocaleDateString("fr-FR"),
+                          })}
                         </p>
                       )}
                       {subscription.statut === "actif" && (
                         <p className="mb-0">
-                          <span className="badge bg-success me-2">Actif</span>
-                          Abonnement valide jusqu'au{" "}
-                          {new Date(subscription.date_fin_abonnement).toLocaleDateString("fr-FR")}.
+                          <span className="badge bg-success me-2">{t("dashboard.profil.abonnement.badgeActif")}</span>
+                          {t("dashboard.profil.abonnement.actifTexte", {
+                            date: new Date(subscription.date_fin_abonnement).toLocaleDateString("fr-FR"),
+                          })}
                         </p>
                       )}
                       {subscription.statut === "expire" && (
                         <p className="mb-0">
-                          <span className="badge bg-danger me-2">Expiré</span>
-                          Abonnez-vous pour continuer à recevoir des alertes.
+                          <span className="badge bg-danger me-2">{t("dashboard.profil.abonnement.badgeExpire")}</span>
+                          {t("dashboard.profil.abonnement.expireTexte")}
                         </p>
                       )}
                     </div>
@@ -1577,7 +1608,7 @@ const Dashboard = () => {
                         onClick={handleSouscrire}
                         disabled={initiatingPayment}
                       >
-                        {initiatingPayment ? "Redirection..." : "S'abonner (annuel)"}
+                        {initiatingPayment ? t("dashboard.common.redirection") : t("dashboard.profil.abonnement.sabonnerAnnuel")}
                       </button>
                     )}
                   </div>
@@ -1587,13 +1618,13 @@ const Dashboard = () => {
 
             <div className="card mb-4">
               <div className="card-header">
-                <h5 className="mb-0">Informations de l'entreprise</h5>
+                <h5 className="mb-0">{t("dashboard.profil.entreprise.titre")}</h5>
               </div>
               <div className="card-body">
                 <form onSubmit={handleSubmitUpdateProfile}>
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Nom de l'entreprise</label>
+                      <label className="form-label">{t("dashboard.profil.entreprise.labelNom")}</label>
                       <input
                         type="text"
                         className="form-control"
@@ -1608,7 +1639,7 @@ const Dashboard = () => {
                     </div>
                     <div className="col-md-6 mb-3">
                       <label className="form-label">
-                        Numéro d'identification
+                        {t("dashboard.profil.entreprise.labelNumeroId")}
                       </label>
                       <input
                         type="text"
@@ -1625,7 +1656,7 @@ const Dashboard = () => {
                   </div>
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Numéro RCCM</label>
+                      <label className="form-label">{t("dashboard.profil.entreprise.labelRccm")}</label>
                       <input
                         type="text"
                         className="form-control"
@@ -1639,7 +1670,7 @@ const Dashboard = () => {
                       />
                     </div>
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Nom du représentant</label>
+                      <label className="form-label">{t("dashboard.profil.entreprise.labelNomRepresentant")}</label>
                       <input
                         type="text"
                         className="form-control"
@@ -1656,7 +1687,7 @@ const Dashboard = () => {
                   <div className="row">
                     <div className="col-md-6 mb-3">
                       <label className="form-label">
-                        Prénom du représentant
+                        {t("dashboard.profil.entreprise.labelPrenomRepresentant")}
                       </label>
                       <input
                         type="text"
@@ -1671,7 +1702,7 @@ const Dashboard = () => {
                       />
                     </div>
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Adresse</label>
+                      <label className="form-label">{t("dashboard.profil.entreprise.labelAdresse")}</label>
                       <input
                         type="text"
                         className="form-control"
@@ -1687,7 +1718,7 @@ const Dashboard = () => {
                   </div>
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Email</label>
+                      <label className="form-label">{t("dashboard.profil.entreprise.labelEmail")}</label>
                       <input
                         type="email"
                         className="form-control"
@@ -1701,7 +1732,7 @@ const Dashboard = () => {
                       />
                     </div>
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Téléphone</label>
+                      <label className="form-label">{t("dashboard.profil.entreprise.labelTelephone")}</label>
                       <input
                         type="tel"
                         className="form-control"
@@ -1718,13 +1749,12 @@ const Dashboard = () => {
 
                   {/* Secteurs d'activité (select multiple avec recherche) */}
                   <div className="mb-3">
-                    <label className="form-label">Secteurs d'activité</label>
+                    <label className="form-label">{t("dashboard.profil.entreprise.labelSecteurs")}</label>
                     {loadingSecteurs ? (
-                      <p>Chargement des secteurs...</p>
+                      <p>{t("dashboard.common.chargementSecteurs")}</p>
                     ) : errorSecteurs ? (
                       <p className="text-danger">
-                        Erreur de chargement des secteurs:{" "}
-                        {errorSecteurs.message}
+                        {t("dashboard.common.erreurChargementSecteurs", { message: errorSecteurs.message })}
                       </p>
                     ) : (
                       <SearchableMultiSelect
@@ -1741,7 +1771,7 @@ const Dashboard = () => {
                             secteursActivite: updated,
                           });
                         }}
-                        placeholder="Rechercher un secteur..."
+                        placeholder={t("dashboard.common.rechercherSecteur")}
                         getId={(s) => s.id}
                         getLabel={(s) => s.nom}
                       />
@@ -1750,13 +1780,12 @@ const Dashboard = () => {
 
                   {/* Domaines d'activité */}
                   <div className="mb-3">
-                    <label className="form-label">Domaines d'activité</label>
+                    <label className="form-label">{t("dashboard.profil.entreprise.labelDomaines")}</label>
                     {loadingDomaines ? (
-                      <p>Chargement des domaines...</p>
+                      <p>{t("dashboard.common.chargementDomaines")}</p>
                     ) : errorDomaines ? (
                       <p className="text-danger">
-                        Erreur de chargement des domaines:{" "}
-                        {errorDomaines.message}
+                        {t("dashboard.common.erreurChargementDomaines", { message: errorDomaines.message })}
                       </p>
                     ) : (
                       <div className="row">
@@ -1789,7 +1818,7 @@ const Dashboard = () => {
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="Ajouter un domaine non listé..."
+                        placeholder={t("dashboard.common.placeholderAjouterDomaine")}
                         value={newDomaineInputProfile}
                         onChange={(e) =>
                           setNewDomaineInputProfile(e.target.value)
@@ -1803,7 +1832,7 @@ const Dashboard = () => {
                         className="btn btn-outline-secondary"
                         onClick={handleProfileNewDomaine}
                       >
-                        Ajouter
+                        {t("dashboard.common.ajouter")}
                       </button>
                     </div>
                   </div>
@@ -1814,12 +1843,12 @@ const Dashboard = () => {
                     disabled={loadingProfileUpdate}
                   >
                     {loadingProfileUpdate
-                      ? "Enregistrement..."
-                      : "Enregistrer les modifications"}
+                      ? t("dashboard.profil.entreprise.btnEnregistrement")
+                      : t("dashboard.profil.entreprise.btnEnregistrer")}
                   </button>
                   {errorProfileUpdate && (
                     <p className="text-danger mt-2">
-                      Erreur: {errorProfileUpdate.message}
+                      {t("dashboard.common.erreurAvecMessage", { message: errorProfileUpdate.message })}
                     </p>
                   )}
                 </form>
@@ -1829,12 +1858,12 @@ const Dashboard = () => {
             {/* Section Ajout de Secteur */}
             <div className="card mb-4">
               <div className="card-header">
-                <h5 className="mb-0">Ajouter un nouveau secteur</h5>
+                <h5 className="mb-0">{t("dashboard.profil.secteurs.titre")}</h5>
               </div>
               <div className="card-body">
                 <form onSubmit={handleAddSecteur}>
                   <div className="mb-3">
-                    <label className="form-label">Nom du secteur</label>
+                    <label className="form-label">{t("dashboard.profil.secteurs.labelNom")}</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1844,7 +1873,7 @@ const Dashboard = () => {
                     />
                   </div>
                   <button type="submit" className="btn btn-cta">
-                    Ajouter le secteur
+                    {t("dashboard.profil.secteurs.btnAjouter")}
                   </button>
                 </form>
               </div>
@@ -1853,12 +1882,12 @@ const Dashboard = () => {
             {/* Section Ajout de Domaine */}
             <div className="card mb-4">
               <div className="card-header">
-                <h5 className="mb-0">Ajouter un nouveau domaine</h5>
+                <h5 className="mb-0">{t("dashboard.profil.domaines.titre")}</h5>
               </div>
               <div className="card-body">
                 <form onSubmit={handleAddDomaine}>
                   <div className="mb-3">
-                    <label className="form-label">Libellé du domaine</label>
+                    <label className="form-label">{t("dashboard.profil.domaines.labelLibelle")}</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1868,7 +1897,7 @@ const Dashboard = () => {
                     />
                   </div>
                   <button type="submit" className="btn btn-cta">
-                    Ajouter le domaine
+                    {t("dashboard.profil.domaines.btnAjouter")}
                   </button>
                 </form>
               </div>
@@ -1878,12 +1907,12 @@ const Dashboard = () => {
           <div className="col-lg-4">
             <div className="card">
               <div className="card-header">
-                <h5 className="mb-0">Changer le mot de passe</h5>
+                <h5 className="mb-0">{t("dashboard.profil.motDePasse.titre")}</h5>
               </div>
               <div className="card-body">
                 <form onSubmit={handleSubmitChangePassword}>
                   <div className="mb-3">
-                    <label className="form-label">Mot de passe actuel</label>
+                    <label className="form-label">{t("dashboard.profil.motDePasse.labelActuel")}</label>
                     <input
                       type="password"
                       className="form-control"
@@ -1893,7 +1922,7 @@ const Dashboard = () => {
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Nouveau mot de passe</label>
+                    <label className="form-label">{t("dashboard.profil.motDePasse.labelNouveau")}</label>
                     <input
                       type="password"
                       className="form-control"
@@ -1904,7 +1933,7 @@ const Dashboard = () => {
                   </div>
                   <div className="mb-3">
                     <label className="form-label">
-                      Confirmer le nouveau mot de passe
+                      {t("dashboard.profil.motDePasse.labelConfirmer")}
                     </label>
                     <input
                       type="password"
@@ -1920,12 +1949,12 @@ const Dashboard = () => {
                     disabled={loadingPasswordUpdate}
                   >
                     {loadingPasswordUpdate
-                      ? "Mise à jour..."
-                      : "Mettre à jour le mot de passe"}
+                      ? t("dashboard.profil.motDePasse.btnMiseAJour")
+                      : t("dashboard.profil.motDePasse.btnMettreAJour")}
                   </button>
                   {errorPasswordUpdate && (
                     <p className="text-danger mt-2">
-                      Erreur: {errorPasswordUpdate.message}
+                      {t("dashboard.common.erreurAvecMessage", { message: errorPasswordUpdate.message })}
                     </p>
                   )}
                 </form>
@@ -1947,17 +1976,16 @@ const Dashboard = () => {
       <div className="modal-dialog modal-lg">
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
-            <h5 className="modal-title">Créer votre entreprise</h5>
+            <h5 className="modal-title">{t("dashboard.modales.ajoutEntreprise.titre")}</h5>
           </div>
           <form onSubmit={handleSubmitAddEntreprise}>
             <div className="modal-body">
               <p className="text-muted">
-                Veuillez renseigner les informations de votre entreprise pour
-                commencer.
+                {t("dashboard.modales.ajoutEntreprise.intro")}
               </p>
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Nom de l'entreprise *</label>
+                  <label className="form-label">{t("dashboard.modales.ajoutEntreprise.labelNom")}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1973,7 +2001,7 @@ const Dashboard = () => {
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label">
-                    Numéro d'identification *
+                    {t("dashboard.modales.ajoutEntreprise.labelNumeroId")}
                   </label>
                   <input
                     type="text"
@@ -1991,7 +2019,7 @@ const Dashboard = () => {
               </div>
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Numéro RCCM *</label>
+                  <label className="form-label">{t("dashboard.modales.ajoutEntreprise.labelRccm")}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -2006,7 +2034,7 @@ const Dashboard = () => {
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Téléphone</label>
+                  <label className="form-label">{t("dashboard.profil.entreprise.labelTelephone")}</label>
                   <input
                     type="tel"
                     className="form-control"
@@ -2022,7 +2050,7 @@ const Dashboard = () => {
               </div>
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Email</label>
+                  <label className="form-label">{t("dashboard.profil.entreprise.labelEmail")}</label>
                   <input
                     type="email"
                     className="form-control"
@@ -2036,7 +2064,7 @@ const Dashboard = () => {
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Nom du représentant</label>
+                  <label className="form-label">{t("dashboard.profil.entreprise.labelNomRepresentant")}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -2052,7 +2080,7 @@ const Dashboard = () => {
               </div>
               <div className="row">
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Prénom du représentant</label>
+                  <label className="form-label">{t("dashboard.profil.entreprise.labelPrenomRepresentant")}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -2066,7 +2094,7 @@ const Dashboard = () => {
                   />
                 </div>
                 <div className="col-md-6 mb-3">
-                  <label className="form-label">Adresse</label>
+                  <label className="form-label">{t("dashboard.profil.entreprise.labelAdresse")}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -2082,12 +2110,12 @@ const Dashboard = () => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Secteurs d'activité *</label>
+                <label className="form-label">{t("dashboard.modales.ajoutEntreprise.labelSecteurs")}</label>
                 {loadingSecteurs ? (
-                  <p>Chargement des secteurs...</p>
+                  <p>{t("dashboard.common.chargementSecteurs")}</p>
                 ) : errorSecteurs ? (
                   <p className="text-danger">
-                    Erreur de chargement des secteurs: {errorSecteurs.message}
+                    {t("dashboard.common.erreurChargementSecteurs", { message: errorSecteurs.message })}
                   </p>
                 ) : (
                   <SearchableMultiSelect
@@ -2099,7 +2127,7 @@ const Dashboard = () => {
                         secteursActivite: ids,
                       })
                     }
-                    placeholder="Rechercher un secteur..."
+                    placeholder={t("dashboard.common.rechercherSecteur")}
                     getId={(s) => s.id}
                     getLabel={(s) => s.nom}
                   />
@@ -2107,12 +2135,12 @@ const Dashboard = () => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Domaines d'activité *</label>
+                <label className="form-label">{t("dashboard.modales.ajoutEntreprise.labelDomaines")}</label>
                 {loadingDomaines ? (
-                  <p>Chargement des domaines...</p>
+                  <p>{t("dashboard.common.chargementDomaines")}</p>
                 ) : errorDomaines ? (
                   <p className="text-danger">
-                    Erreur de chargement des domaines: {errorDomaines.message}
+                    {t("dashboard.common.erreurChargementDomaines", { message: errorDomaines.message })}
                   </p>
                 ) : (
                   <div className="row">
@@ -2145,7 +2173,7 @@ const Dashboard = () => {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Ajouter un domaine non listé..."
+                    placeholder={t("dashboard.common.placeholderAjouterDomaine")}
                     value={newDomaineInputAdd}
                     onChange={(e) => setNewDomaineInputAdd(e.target.value)}
                     onKeyDown={(e) => {
@@ -2157,7 +2185,7 @@ const Dashboard = () => {
                     className="btn btn-outline-secondary"
                     onClick={handleAddEntrepriseNewDomaine}
                   >
-                    Ajouter
+                    {t("dashboard.common.ajouter")}
                   </button>
                 </div>
               </div>
@@ -2168,7 +2196,7 @@ const Dashboard = () => {
                 className="btn btn-cta"
                 disabled={loadingActiveCompany}
               >
-                {loadingActiveCompany ? "Création..." : "Créer l'entreprise"}
+                {loadingActiveCompany ? t("dashboard.modales.ajoutEntreprise.btnCreation") : t("dashboard.modales.ajoutEntreprise.btnCreer")}
               </button>
             </div>
           </form>
@@ -2186,7 +2214,7 @@ const Dashboard = () => {
       <div className="modal-dialog modal-xl">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Aperçu du document</h5>
+            <h5 className="modal-title">{t("dashboard.modales.apercu.titre")}</h5>
             <button
               type="button"
               className="btn-close"
@@ -2198,17 +2226,19 @@ const Dashboard = () => {
               <div>
                 <h6>{selectedDocument.titre}</h6>
                 <p className="text-muted mb-2">
-                  Numéro {selectedDocument.numero} - Publié le{" "}
-                  {selectedDocument.date_publication}
-                  {pdfPreviewPage ? ` - Page ${pdfPreviewPage}` : ""}
+                  {t("dashboard.modales.apercu.numeroPublieLe", {
+                    numero: selectedDocument.numero,
+                    date: selectedDocument.date_publication,
+                  })}
+                  {pdfPreviewPage ? t("dashboard.modales.apercu.pageSuffix", { page: pdfPreviewPage }) : ""}
                 </p>
                 {pdfPreviewLoading ? (
                   <div className="bg-light p-4 text-center" style={{ height: "70vh" }}>
-                    <p className="mb-0 pt-5">Chargement du document...</p>
+                    <p className="mb-0 pt-5">{t("dashboard.modales.apercu.chargement")}</p>
                   </div>
                 ) : pdfPreviewError ? (
                   <div className="alert alert-danger">
-                    Impossible d'afficher le document : {pdfPreviewError}
+                    {t("dashboard.modales.apercu.erreur", { error: pdfPreviewError })}
                   </div>
                 ) : (
                   <iframe
@@ -2230,7 +2260,7 @@ const Dashboard = () => {
               className="btn btn-secondary"
               onClick={() => setShowModal(false)}
             >
-              Fermer
+              {t("dashboard.common.fermer")}
             </button>
           </div>
         </div>
@@ -2255,7 +2285,7 @@ const Dashboard = () => {
             }`}
           >
             <h5 className="modal-title">
-              {alertModalType === "success" ? "Succès" : "Erreur"}
+              {alertModalType === "success" ? t("dashboard.modales.alerte.succes") : t("dashboard.modales.alerte.erreur")}
             </h5>
             <button
               type="button"
@@ -2274,7 +2304,7 @@ const Dashboard = () => {
               }`}
               onClick={() => setShowAlertModal(false)}
             >
-              Fermer
+              {t("dashboard.common.fermer")}
             </button>
           </div>
         </div>

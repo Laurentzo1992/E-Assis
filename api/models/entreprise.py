@@ -44,6 +44,11 @@ class Entreprise(Base):
     adresse: Mapped[str | None] = mapped_column(String(255), nullable=True)
     telephone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Langue du CONTENU des alertes envoyees a cette entreprise (whatsapp/email) - "fr"/"en"/"mos".
+    # Meme pattern que `email` juste au-dessus : pre-remplie avec owner.langue a la creation
+    # (api/routers/entreprise.py::create_entreprise), modifiable ensuite via update_entreprise.
+    # Sans rapport avec Utilisateur.langue (langue de l'interface du compte, independante).
+    langue_alertes: Mapped[str | None] = mapped_column(String(5), nullable=True)
     date_creation: Mapped[date | None] = mapped_column(Date, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     repnom: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -52,6 +57,12 @@ class Entreprise(Base):
     # rapport avec le Burkina Faso) comme identifiant principal de l'entreprise.
     rccm: Mapped[str] = mapped_column(String(30), unique=True)
     owner_id: Mapped[int] = mapped_column(ForeignKey("utilisateurs.id", ondelete="CASCADE"))
+    # Mis a True quand domaines/secteurs changent (cf. api/routers/entreprise.py, update_entreprise)
+    # - lu et remis a False par la tache DAG quotidienne rattraper_profils_modifies
+    # (api/scripts/match_and_alert.py) qui reanalyse alors l'entreprise contre les marches encore
+    # ouverts et recents, pour qu'un changement de profil ne fasse pas perdre silencieusement les
+    # opportunites qu'elle aurait du recevoir depuis le debut.
+    profil_a_rattraper: Mapped[bool] = mapped_column(default=False, server_default="false")
 
     owner: Mapped["Utilisateur"] = relationship(back_populates="owned_entreprises", foreign_keys=[owner_id])
     domaines: Mapped[list[Domaine]] = relationship(secondary="entreprise_domaines", viewonly=True)

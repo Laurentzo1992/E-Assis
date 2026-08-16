@@ -9,7 +9,7 @@ export const setNavigateInstance = (navigateFunc) => {
 };
 
 // Fonction pour récupérer les tokens
-const getTokens = () => {
+export const getTokens = () => {
   const accessToken =
     localStorage.getItem("accessToken") ||
     sessionStorage.getItem("accessToken");

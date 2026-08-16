@@ -274,3 +274,11 @@ def test_webhook_prolonge_abonnement_et_reste_idempotent(client, unique_email, m
     assert webhook_response_2.status_code == 204
     statut_response_2 = client.get(f"/api/paiement/abonnement/{entreprise_id}/", headers=headers)
     assert statut_response_2.json()["date_fin_abonnement"] == date_fin_apres_premier
+
+
+def test_webhook_formulaire_sans_reference_renvoie_400_sans_planter(client):
+    # Corps form-urlencoded (comme un vrai webhook CinetPay) mais sans le champ cpm_trans_id :
+    # avant correctif, le repli sur request.json() plantait avec RuntimeError("Stream consumed")
+    # (le flux du corps est deja consomme par request.form()) au lieu de renvoyer un 400 propre.
+    response = client.post("/api/paiement/webhook/", data={"un_autre_champ": "valeur"})
+    assert response.status_code == 400

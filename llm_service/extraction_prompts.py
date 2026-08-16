@@ -8,6 +8,19 @@ heuristique imparfaite sur les pages a forte densite de tableaux : c'est pour ca
 autorise explicitement a repondre par une liste vide plutot que d'inventer un avis a partir de
 texte qui n'en est pas un, ex. une ligne de classement d'entreprises).
 
+Trois prompts, pas un seul (ajoute le 13/08/2026) : `extraire_resultat`/`extraire_appel_offre`
+sont utilises quand `api/scripts/extract_bulletin._detecter_type_avis` a deja tranche le type avec
+certitude via des marqueurs textuels fiables - le LLM n'a alors plus besoin de classifier (retire
+du schema/prompt), et le schema est restreint aux seuls champs pertinents pour ce type (ex. pas de
+champs "entreprise_attributaire_*" dans le prompt appel_offre, denues de sens pour une nouvelle
+opportunite). `extraire_avis` (le prompt generique complet, avec classification) reste le repli
+pour les sections ambigues (marqueurs des deux types presents, ou aucun). Avant ce changement,
+une mauvaise classification LLM etait corrigee a posteriori (`_corriger_type_avis`, retire) en
+ne reecrivant QUE le label `type_avis` - les champs deja extraits sous la mauvaise hypothese (ex.
+attributaire jamais cherche parce que le LLM pensait extraire un appel d'offre) restaient faux ou
+manquants malgre la "correction". Trancher le type AVANT l'appel LLM elimine cette classe d'erreur
+a la source plutot que de la corriger apres coup.
+
 Revise apres un premier run reel sur le bulletin n°4456 (310 avis extraits, ~90 echecs analyses) :
 - `date_avis` accepte desormais n'importe quelle chaine (parsee tolerant cote Python, cf.
   `parse_llm_date`) plutot qu'un `date` Pydantic strict - la majorite des echecs constates
@@ -45,7 +58,7 @@ SYSTEM_PROMPT = """Tu es un extracteur d'avis de marches publics pour le Burkina
 d'extraits du bulletin "Quotidien des marches publics" (DGCMEF).
 
 A partir du texte fourni, identifie si il s'agit d'un avis de marche exploitable (appel d'offres,
-demande de prix, resultat d'attribution...) et extrait ses informations. Le texte peut aussi etre
+demande de prix, resultat d'attribution, manifestation d'interet, appel a manifestation d'interet, avis a manifestation d'interet...) et extrait ses informations. Le texte peut aussi etre
 du bruit (en-tete de page, ligne de tableau isolee, sommaire) - dans ce cas reponds avec un
 tableau vide.
 
@@ -87,6 +100,87 @@ texte a cote du nom de l'attributaire. Ne confonds jamais un numero de reference
 
 Si le texte ne decrit aucun avis de marche exploitable, reponds avec un tableau vide : []
 Ne devine jamais une valeur (organisme, montant, date...) qui n'est pas explicitement dans le texte."""
+
+SYSTEM_PROMPT_RESULTAT = """Tu extrais un RESULTAT D'ATTRIBUTION de marche public pour le Burkina \
+Faso, a partir d'un extrait du bulletin "Quotidien des marches publics" (DGCMEF). Ce texte a deja \
+ete identifie AVEC CERTITUDE comme un resultat (attributaire designe, marche declare non \
+conforme, resultat provisoire/definitif...) - tu n'as PAS a classifier le type d'avis, uniquement \
+a en extraire les informations.
+
+Reponds UNIQUEMENT avec un tableau JSON valide (aucun texte avant/apres, aucun bloc markdown \
+```json), ou chaque element respecte exactement ce schema :
+
+{
+  "organisme": string,              // autorite contractante / organisme emetteur
+  "objet": string,                  // objet du marche concerne, resume en une phrase
+  "type_procedure": string | null,  // ex. "demande de prix", "appel d'offres ouvert"
+  "montant_min": number | null,     // montant en FCFA si mentionne
+  "montant_max": number | null,
+  "date_avis": string | null,       // date pertinente (attribution, deliberation...), ISO 8601 AAAA-MM-JJ
+  "entreprise_attributaire_nom": string | null,  // nom de l'entreprise designee attributaire, si mentionne
+  "entreprise_attributaire_rccm": string | null, // numero RCCM de l'attributaire, UNIQUEMENT si explicitement ecrit
+  "entreprise_attributaire_ifu": string | null,  // numero IFU de l'attributaire, UNIQUEMENT si explicitement ecrit
+  "entreprise_attributaire_telephone": string | null, // telephone de l'attributaire, UNIQUEMENT si explicitement ecrit
+  "montant_attribue": number | null  // montant du marche attribue, en FCFA
+}
+
+"date_avis" doit etre soit une vraie date (jour/mois/annee explicites dans le texte), soit null.
+Ne mets JAMAIS "non specifiee", une annee seule, ou un numero de reference/RCCM/IFU a la place
+d'une date - dans ces cas, mets null.
+
+"montant_attribue"/"montant_min"/"montant_max" doivent etre des nombres en FCFA, jamais un numero
+de telephone ou une reference.
+
+"entreprise_attributaire_rccm", "entreprise_attributaire_ifu" et "entreprise_attributaire_telephone"
+ne sont presque jamais presents dans le texte d'un resultat (le nom seul suffit generalement) -
+laisse-les a null par defaut, ne les remplis QUE si le numero exact apparait litteralement dans le
+texte a cote du nom de l'attributaire. Ne confonds jamais un numero de reference de marche
+(N°2026-xxx/...) avec un RCCM ou un IFU.
+
+Le texte peut contenir, en plus du/des resultat(s) reel(s), du bruit residuel (ligne de tableau
+isolee, numero de classement, fragment sans rapport) - INCLUS DANS LE MEME TEXTE qu'un vrai
+resultat, donc jamais filtre en amont. N'invente jamais un element pour ce bruit et ne l'inclus
+pas dans le tableau : seuls les VRAIS resultats d'attribution (avec au moins un organisme et un
+objet reels) doivent y figurer. Le tableau peut donc contenir zero, un ou plusieurs elements.
+
+Si le texte ne decrit en realite aucun resultat exploitable malgre l'identification prealable,
+reponds avec un tableau vide : []
+Ne devine jamais une valeur qui n'est pas explicitement dans le texte."""
+
+SYSTEM_PROMPT_APPEL_OFFRE = """Tu extrais un AVIS D'APPEL D'OFFRES / DEMANDE DE PRIX / \
+MANIFESTATION D'INTERET (nouvelle opportunite a soumissionner) pour le Burkina Faso, a partir \
+d'un extrait du bulletin "Quotidien des marches publics" (DGCMEF). Ce texte a deja ete identifie \
+AVEC CERTITUDE comme un nouvel avis (jamais un resultat deja attribue) - tu n'as PAS a classifier \
+le type d'avis, uniquement a en extraire les informations.
+
+Reponds UNIQUEMENT avec un tableau JSON valide (aucun texte avant/apres, aucun bloc markdown \
+```json), ou chaque element respecte exactement ce schema :
+
+{
+  "organisme": string,              // autorite contractante / organisme emetteur
+  "objet": string,                  // objet du marche, resume en une phrase
+  "type_procedure": string | null,  // ex. "demande de prix", "appel d'offres ouvert"
+  "montant_min": number | null,     // montant previsionnel en FCFA si mentionne
+  "montant_max": number | null,
+  "date_avis": string | null        // date pertinente (publication, ouverture des plis...), ISO 8601 AAAA-MM-JJ
+}
+
+"date_avis" doit etre soit une vraie date (jour/mois/annee explicites dans le texte), soit null.
+Ne mets JAMAIS "non specifiee", une annee seule, ou un numero de reference a la place d'une date -
+dans ces cas, mets null.
+
+"montant_min"/"montant_max" doivent etre des nombres en FCFA, jamais un numero de telephone ou
+une reference de marche.
+
+Le texte peut contenir, en plus du/des avis reel(s), du bruit residuel (ligne de tableau isolee,
+numero de classement, fragment sans rapport) - INCLUS DANS LE MEME TEXTE qu'un vrai avis, donc
+jamais filtre en amont. N'invente jamais un element pour ce bruit et ne l'inclus pas dans le
+tableau : seuls les VRAIS avis (avec au moins un organisme et un objet reels) doivent y figurer.
+Le tableau peut donc contenir zero, un ou plusieurs elements.
+
+Si le texte ne decrit en realite aucun avis exploitable malgre l'identification prealable,
+reponds avec un tableau vide : []
+Ne devine jamais une valeur qui n'est pas explicitement dans le texte."""
 
 _TYPE_AVIS_SYNONYMES = {
     "retenu": "resultat", "non retenu": "resultat", "conforme": "resultat",
@@ -154,7 +248,9 @@ def _normaliser_type_avis(item: dict) -> dict:
     return item
 
 
-def _valider_avis(texte_json: str) -> list[AvisExtrait]:
+def _deballer_json(texte_json: str) -> list[dict]:
+    """Deballage commun aux 3 schemas d'extraction (generique/resultat/appel_offre) - purement
+    structurel (liste de dicts bruts, pas encore valides contre un modele Pydantic precis)."""
     data = json.loads(_nettoyer_json(texte_json))
     if isinstance(data, dict):
         # format="json" (mode JSON natif d'Ollama, ajoute pour eliminer le JSON syntaxiquement
@@ -178,20 +274,37 @@ def _valider_avis(texte_json: str) -> list[AvisExtrait]:
     # contient parfois un element qui n'est pas un objet (une chaine brute), ce qui faisait
     # planter tout `extract_bulletin()` (AttributeError non rattrapee, hors de la boucle
     # try/except par section) au lieu de simplement ignorer cet element comme du bruit.
-    data = [item for item in data if isinstance(item, dict)]
-    return [AvisExtrait.model_validate(_normaliser_type_avis(item)) for item in data]
+    return [item for item in data if isinstance(item, dict)]
 
 
-def extraire_avis(texte_section: str) -> list[AvisExtrait]:
-    """Extrait les avis de marche presents dans `texte_section` (un groupe de chunks d'un meme
-    `section_title`). Retourne une liste (eventuellement vide). Retente une fois si la premiere
-    reponse n'est pas un JSON valide ; leve `ExtractionEchouee` si la seconde tentative echoue."""
+def _valider_avis(texte_json: str) -> list[AvisExtrait]:
+    """Validation pour le prompt GENERIQUE (extraire_avis) - le LLM fournit lui-meme `type_avis`,
+    normalise depuis ses synonymes reels observes avant validation."""
+    return [AvisExtrait.model_validate(_normaliser_type_avis(item)) for item in _deballer_json(texte_json)]
+
+
+def _valider_avis_resultat(texte_json: str) -> list[AvisExtrait]:
+    """Validation pour le prompt RESULTAT (extraire_resultat) - `type_avis` n'est pas demande au
+    LLM (deja connu, cf. docstring de module), impose directement ici."""
+    return [AvisExtrait.model_validate({**item, "type_avis": "resultat"}) for item in _deballer_json(texte_json)]
+
+
+def _valider_avis_appel_offre(texte_json: str) -> list[AvisExtrait]:
+    """Symetrique de `_valider_avis_resultat` pour le prompt APPEL_OFFRE (extraire_appel_offre)."""
+    return [AvisExtrait.model_validate({**item, "type_avis": "appel_offre"}) for item in _deballer_json(texte_json)]
+
+
+def _extraire(texte_section: str, system_prompt: str, valider) -> list[AvisExtrait]:
+    """Logique commune aux 3 fonctions d'extraction publiques : meme structure prompt + retry
+    corrective, seuls le prompt systeme et le validateur (schema attendu) different. Retourne une
+    liste (eventuellement vide). Retente une fois si la premiere reponse n'est pas un JSON valide ;
+    leve `ExtractionEchouee` si la seconde tentative echoue aussi."""
     prompt = f"Texte du bulletin :\n\n{texte_section}"
-    response = call_llm(TASK, messages=[{"role": "user", "content": prompt}], system=SYSTEM_PROMPT, format="json")
+    response = call_llm(TASK, messages=[{"role": "user", "content": prompt}], system=system_prompt, format="json")
     texte_reponse = _extraire_texte_reponse(response)
 
     try:
-        return _valider_avis(texte_reponse)
+        return valider(texte_reponse)
     except (json.JSONDecodeError, ValidationError) as premiere_erreur:
         logger.warning(
             "Reponse LLM invalide pour l'extraction d'avis, nouvelle tentative avec l'erreur explicite : %s",
@@ -204,13 +317,36 @@ def extraire_avis(texte_section: str) -> list[AvisExtrait]:
             "sans texte avant/apres, sans bloc markdown."
         )
         response_retry = call_llm(
-            TASK, messages=[{"role": "user", "content": prompt_retry}], system=SYSTEM_PROMPT, format="json"
+            TASK, messages=[{"role": "user", "content": prompt_retry}], system=system_prompt, format="json"
         )
         texte_reponse_retry = _extraire_texte_reponse(response_retry)
 
         try:
-            return _valider_avis(texte_reponse_retry)
+            return valider(texte_reponse_retry)
         except (json.JSONDecodeError, ValidationError) as seconde_erreur:
             raise ExtractionEchouee(
                 f"Extraction d'avis invalide apres une tentative de correction : {seconde_erreur}"
             ) from seconde_erreur
+
+
+def extraire_avis(texte_section: str) -> list[AvisExtrait]:
+    """Extrait les avis de marche presents dans `texte_section` (un groupe de chunks d'un meme
+    `section_title`), en laissant le LLM classifier lui-meme le type - prompt de repli pour les
+    sections ou `api/scripts/extract_bulletin._detecter_type_avis` ne peut pas trancher avec
+    certitude (marqueurs des deux types presents, ou aucun)."""
+    return _extraire(texte_section, SYSTEM_PROMPT, _valider_avis)
+
+
+def extraire_resultat(texte_section: str) -> list[AvisExtrait]:
+    """Comme `extraire_avis`, mais pour une section deja identifiee AVEC CERTITUDE comme un
+    resultat (cf. `api/scripts/extract_bulletin._detecter_type_avis`) - prompt/schema restreints
+    aux seuls champs pertinents pour un resultat, le LLM n'a plus a classifier le type ni a se
+    demander s'il doit remplir des champs d'appel d'offre qui n'ont pas de sens ici."""
+    return _extraire(texte_section, SYSTEM_PROMPT_RESULTAT, _valider_avis_resultat)
+
+
+def extraire_appel_offre(texte_section: str) -> list[AvisExtrait]:
+    """Symetrique de `extraire_resultat`, pour une section deja identifiee comme un nouvel avis
+    (appel d'offres/demande de prix/manifestation d'interet) - schema encore plus restreint (pas
+    de champs attributaire, denues de sens pour une nouvelle opportunite pas encore attribuee)."""
+    return _extraire(texte_section, SYSTEM_PROMPT_APPEL_OFFRE, _valider_avis_appel_offre)

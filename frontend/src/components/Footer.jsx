@@ -1,7 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function Footer() {
+  const { t } = useTranslation();
   return (
     <>
       <svg
@@ -86,31 +88,29 @@ export default function Footer() {
           <div className="footer-content">
             {/* Section Veille Marchés */}
             <div className="footer-column">
-              <h3 className="footer-title">Veille Marchés</h3>
-              <p className="footer-description">
-                La solution intelligente pour votre veille des marchés publics
-              </p>
+              <h3 className="footer-title">{t("footer.brand")}</h3>
+              <p className="footer-description">{t("footer.description")}</p>
             </div>
 
             {/* Section Navigation */}
             <div className="footer-column">
-              <h3 className="footer-title">Navigation</h3>
+              <h3 className="footer-title">{t("footer.navigation.title")}</h3>
               <ul className="footer-links">
                 <li>
-                  <Link to="/">Accueil</Link>
+                  <Link to="/">{t("footer.navigation.home")}</Link>
                 </li>
                 <li>
-                  <a href="#fonctionnalites">Fonctionnalités</a>
+                  <a href="#fonctionnalites">{t("footer.navigation.features")}</a>
                 </li>
                 <li>
-                  <Link to="/Tarifs">Tarifs</Link>
+                  <Link to="/Tarifs">{t("footer.navigation.pricing")}</Link>
                 </li>
               </ul>
             </div>
 
             {/* Section Contact */}
             <div className="footer-column">
-              <h3 className="footer-title">Contact</h3>
+              <h3 className="footer-title">{t("footer.contact.title")}</h3>
               <div className="contact-info">
                 <p className="contact-item">
                   <span className="contact-icon">✉</span>
@@ -129,7 +129,7 @@ export default function Footer() {
         <div className="footer-bottom">
           <div className="footer-container">
             <p className="copyright">
-              © {new Date().getFullYear()} Veille Marchés. Tous droits réservés.
+              {t("footer.copyright", { year: new Date().getFullYear() })}
             </p>
           </div>
         </div>
