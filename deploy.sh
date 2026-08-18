@@ -32,6 +32,10 @@ docker exec kbbot-api sh -c "cd /app/api && alembic upgrade head"
 echo "==> Airflow (rebuild leger, pas de dependances ML - toujours a jour en quelques secondes)"
 docker compose -f docker-compose.airflow.yml up -d --build
 
+echo "==> Modeles Ollama (idempotent - ne retelecharge rien si deja present)"
+docker exec kbbot-ollama ollama pull mistral:7b
+docker exec kbbot-ollama ollama pull mistral-nemo:12b
+
 echo "==> Nettoyage des anciennes images (evite l'accumulation de disque au fil des deploiements)"
 docker image prune -f
 
