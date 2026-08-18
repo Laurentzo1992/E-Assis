@@ -12,4 +12,11 @@ ENV PYTHONPATH=/app
 
 # alembic upgrade au demarrage du conteneur (pas au build) : la base Postgres n'existe/n'est
 # joignable qu'a l'execution (docker-compose depends_on: service_healthy garantit l'ordre).
-CMD ["sh", "-c", "alembic -c api/alembic.ini upgrade head && uvicorn api.main:app --host 0.0.0.0 --port 8000"]
+#
+# --proxy-headers --forwarded-allow-ips='*' : sans ca, uvicorn ignore le X-Forwarded-Proto envoye
+# par Caddy (reverse-proxy HTTPS -> ce conteneur en HTTP interne) et considere toute requete comme
+# arrivee en http:// - constate en reel sur /admin (sqladmin genere alors ses URLs de statics en
+# http:// absolu, bloquees en mixed-content par le navigateur depuis la page HTTPS, CSS/JS jamais
+# charges). "*" est sans risque ici : ce conteneur n'est jamais expose directement (aucun port
+# publie sur l'hote en prod, cf. docker-compose.prod.yml), seul Caddy peut l'atteindre.
+CMD ["sh", "-c", "alembic -c api/alembic.ini upgrade head && uvicorn api.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"]
