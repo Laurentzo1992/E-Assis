@@ -97,6 +97,12 @@ ANALYSE_ENVIRONMENT = {
     start_date=pendulum.datetime(2026, 1, 1, tz="UTC"),
     catchup=False,
     default_args=default_args,
+    # Garde-fou : un passage plus lent que 4h (VPS de prod partage, sans GPU, cf.
+    # execution_timeout de extract_structured_data) ne doit jamais chevaucher le passage suivant -
+    # deux DockerOperator lances en parallele sur le meme bulletin n'auraient pas double-traite
+    # (scrape_and_archive court-circuite via _already_archived), mais consommeraient inutilement le
+    # CPU deja limite pour rien.
+    max_active_runs=1,
     tags=["kbbot", "ingestion", "pdf"],
 )
 def dag_kbbot_quotidien():
@@ -138,8 +144,12 @@ def dag_kbbot_quotidien():
         # legeres de fasofoodalert-core, pas pour un LLM local) - constate en reel : un bulletin de
         # 181 sections avec mistral-nemo:12b a largement depasse 15 min et a ete tue en plein appel
         # Ollama (le SIGTERM de timeout a ensuite fait echouer le nettoyage du conteneur Docker,
-        # cf. l'erreur "cannot remove container: container is running").
-        execution_timeout=pendulum.duration(hours=2),
+        # cf. l'erreur "cannot remove container: container is running"). 2h s'est lui-meme revele
+        # trop court sur le VPS de prod (18/08/2026) : CPU partage avec d'autres sites herberges sur
+        # la meme machine (pas de GPU), extraction constatee depassant largement 2h sur un bulletin
+        # charge - meme symptome (409 Conflict a la suppression du conteneur), tache marquee en
+        # echec alors que l'extraction continuait reellement en arriere-plan.
+        execution_timeout=pendulum.duration(hours=8),
     )
 
     # retries=0 : une alerte manquee un jour sera rattrapee au prochain bulletin plutot que
@@ -156,8 +166,10 @@ def dag_kbbot_quotidien():
         mount_tmp_dir=False,
         retries=0,
         # cf. extract_structured_data : 15 min (DEFAULT_ARGS) est trop court des qu'il y a
-        # suffisamment d'entreprises actives (un appel LLM de redaction par match trouve).
-        execution_timeout=pendulum.duration(hours=1),
+        # suffisamment d'entreprises actives (un appel LLM de redaction/verification par match
+        # trouve) - relever aussi par prudence sur le meme constat CPU partage du VPS de prod
+        # (18/08/2026), meme si cette tache n'a pas encore ete observee en timeout elle-meme.
+        execution_timeout=pendulum.duration(hours=3),
         # embed_texts() (profil entreprise) a besoin du meme cache de modele que vectorize_bulletin.
         mounts=[Mount(source="kbbot_ingest_model_cache", target="/root/.cache", type="volume")],
     )
