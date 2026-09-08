@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Résultat de dépouillement — {{ entreprise_nom }}</title>
+  <style>
+    body {
+      background-color: #f4f4f7;
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      color: #333;
+    }
+    .email-wrapper {
+      width: 100%;
+      padding: 20px;
+      background-color: #f4f4f7;
+    }
+    .email-content {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      background-color: #495057;
+      color: #fff;
+      text-align: center;
+      padding: 24px 20px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.5px;
+    }
+    .header p {
+      margin: 8px 0 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .body {
+      padding: 24px 20px;
+    }
+    .body p {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    .meta {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+    .badge {
+      display: inline-block;
+      background-color: #e9ecef;
+      color: #495057;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .summary-card {
+      background-color: #f8f9fa;
+      border-left: 4px solid #6c757d;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 18px 0;
+    }
+    .rejet-box {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      border-radius: 4px;
+      padding: 14px 16px;
+      margin: 16px 0;
+      color: #856404;
+    }
+    .row {
+      margin-bottom: 10px;
+    }
+    .row:last-child {
+      margin-bottom: 0;
+    }
+    .label {
+      font-size: 12px;
+      color: #6c757d;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .val {
+      font-size: 14px;
+      color: #212529;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .footer {
+      text-align: center;
+      padding: 18px;
+      font-size: 12px;
+      color: #888;
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-content">
+      <div class="header">
+        <h1>Résultats de Dépouillement</h1>
+        <p>Notification de délibération sur votre soumission</p>
+      </div>
+      <div class="body">
+        <p>Bonjour <strong>{{ entreprise_nom }}</strong>,</p>
+        <p>
+          Les résultats de délibération concernant un marché sur lequel votre entreprise a soumissionné viennent d'être publiés dans le
+          <em>Quotidien des marchés publics (DGCMEF)</em>. Votre offre n'a pas été retenue pour cette attribution :
+        </p>
+
+        <p class="meta">
+          Bulletin n°{{ numero_bulletin }}{% if date_bulletin %} du {{ date_bulletin }}{% endif %}
+          {% if page_number %}&middot; Page {{ page_number }}{% endif %}
+        </p>
+
+        <p><span class="badge">{{ autorite_contractante }}</span></p>
+
+        <div class="summary-card">
+          {% if reference_dossier %}
+          <div class="row">
+            <div class="label">RÉFÉRENCE DU DOSSIER</div>
+            <div class="val">{{ reference_dossier }}</div>
+          </div>
+          {% endif %}
+
+          <div class="row">
+            <div class="label">OBJET DU MARCHÉ</div>
+            <div class="val">{{ objet }}</div>
+          </div>
+
+          {% if intitule_lot %}
+          <div class="row">
+            <div class="label">LOT CONCERNÉ</div>
+            <div class="val">Lot {{ numero_lot }} : {{ intitule_lot }}</div>
+          </div>
+          {% endif %}
+
+          {% if attributaire_gagnant %}
+          <div class="row">
+            <div class="label">ATTRIBUTAIRE RETENU</div>
+            <div class="val">{{ attributaire_gagnant }}{% if montant_gagnant %} ({{ montant_gagnant }}){% endif %}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if motif_rejet %}
+        <div class="rejet-box">
+          <strong>Motif d'écartement / Observation de la commission :</strong><br />
+          {{ motif_rejet }}
+        </div>
+        {% endif %}
+
+        <p>
+          Vous pouvez consulter le tableau complet d'évaluation des offres en page {{ page_number | default("source") }} du bulletin pour analyser les critères de notation.
+        </p>
+      </div>
+      <div class="footer">
+        <p>Alerte générée par E-Assis pour vous permettre de suivre vos soumissions et d'améliorer vos futurs dossiers de réponse.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

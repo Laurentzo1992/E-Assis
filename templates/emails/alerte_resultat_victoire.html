@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attribution de marché remportée !</title>
+  <style>
+    body {
+      background-color: #f4f4f7;
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      color: #333;
+    }
+    .email-wrapper {
+      width: 100%;
+      padding: 20px;
+      background-color: #f4f4f7;
+    }
+    .email-content {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      background-color: #198754;
+      color: #fff;
+      text-align: center;
+      padding: 24px 20px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.5px;
+    }
+    .header p {
+      margin: 8px 0 0 0;
+      font-size: 15px;
+      opacity: 0.95;
+    }
+    .body {
+      padding: 24px 20px;
+    }
+    .body p {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    .meta {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+    .badge {
+      display: inline-block;
+      background-color: #e9f7ef;
+      color: #198754;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .summary-card {
+      background-color: #f8f9fa;
+      border-left: 4px solid #198754;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 18px 0;
+    }
+    .summary-card .row {
+      margin-bottom: 10px;
+    }
+    .summary-card .row:last-child {
+      margin-bottom: 0;
+    }
+    .label {
+      font-size: 13px;
+      color: #6c757d;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .val {
+      font-size: 15px;
+      color: #212529;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .montant-highlight {
+      font-size: 18px;
+      color: #198754;
+      font-weight: bold;
+    }
+    .footer {
+      text-align: center;
+      padding: 18px;
+      font-size: 12px;
+      color: #888;
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-content">
+      <div class="header">
+        <h1>Félicitations ! Marché Attribué</h1>
+        <p>Votre entreprise a été désignée attributaire</p>
+      </div>
+      <div class="body">
+        <p>Bonjour <strong>{{ entreprise_nom }}</strong>,</p>
+        <p>
+          Nous avons le plaisir de vous informer que selon les résultats de dépouillement publiés dans le
+          <em>Quotidien des marchés publics (DGCMEF)</em>, votre offre a été retenue :
+        </p>
+
+        <p class="meta">
+          Bulletin n°{{ numero_bulletin }}{% if date_bulletin %} du {{ date_bulletin }}{% endif %}
+          {% if page_number %}&middot; Page {{ page_number }}{% endif %}
+        </p>
+
+        <p><span class="badge">{{ autorite_contractante }}</span></p>
+
+        <div class="summary-card">
+          {% if reference_dossier %}
+          <div class="row">
+            <div class="label">RÉFÉRENCE DU DOSSIER</div>
+            <div class="val">{{ reference_dossier }}</div>
+          </div>
+          {% endif %}
+
+          <div class="row">
+            <div class="label">OBJET DU MARCHÉ</div>
+            <div class="val">{{ objet }}</div>
+          </div>
+
+          {% if intitule_lot %}
+          <div class="row">
+            <div class="label">LOT ATTRIBUÉ</div>
+            <div class="val">Lot {{ numero_lot }} : {{ intitule_lot }}</div>
+          </div>
+          {% endif %}
+
+          <div class="row">
+            <div class="label">MONTANT RETENU (TTC)</div>
+            <div class="val montant-highlight">{{ montant }}</div>
+          </div>
+
+          {% if delai_execution %}
+          <div class="row">
+            <div class="label">DÉLAI D'EXÉCUTION</div>
+            <div class="val">{{ delai_execution }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <p>
+          Rapprochez-vous dès que possible de l'autorité contractante pour la suite des formalités de contractualisation et de signature du marché.
+        </p>
+      </div>
+      <div class="footer">
+        <p>Alerte générée automatiquement par E-Assis suite à la délibération officielle parue au Quotidien des marchés publics.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

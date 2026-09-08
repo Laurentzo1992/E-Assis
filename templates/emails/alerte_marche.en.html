@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New procurement opportunity</title>
+  <style>
+    body {
+      background-color: #f4f4f7;
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      color: #333;
+    }
+    .email-wrapper {
+      width: 100%;
+      padding: 20px;
+      background-color: #f4f4f7;
+    }
+    .email-content {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      background-color: #198754;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+    .body {
+      padding: 20px;
+    }
+    .body p {
+      font-size: 16px;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    .badge {
+      display: inline-block;
+      background-color: #e9f7ef;
+      color: #198754;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .meta {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    .objet-box {
+      background-color: #f8f9fa;
+      border-left: 4px solid #198754;
+      padding: 14px 16px;
+      margin: 16px 0;
+      font-size: 16px;
+      color: #222;
+    }
+    .attachment-note {
+      font-size: 14px;
+      color: #444;
+      background-color: #fff8e1;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-top: 16px;
+    }
+    .footer {
+      text-align: center;
+      padding: 15px;
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-content">
+      <div class="header">
+        <h1>New procurement opportunity</h1>
+      </div>
+      <div class="body">
+        <p>Hello <strong>{{ entreprise_nom }}</strong>,</p>
+        <p>A notice matching your profile was just published in the "Quotidien des marchés publics" bulletin (DGCMEF):</p>
+
+        <p class="meta">
+          Bulletin no. {{ numero_bulletin }}{% if date_bulletin %} dated {{ date_bulletin }}{% endif %}
+          {% if page_number %}&middot; page {{ page_number }}{% endif %}
+        </p>
+
+        <p><span class="badge">{{ organisme }}</span></p>
+
+        <div class="objet-box">{{ resume }}</div>
+
+        {% if page_number %}
+        <p class="attachment-note">
+          📎 Page {{ page_number }} of the bulletin (containing this notice) is attached to this email.
+        </p>
+        {% endif %}
+
+        <p>See the full bulletin on the DGCMEF website for details and participation terms.</p>
+      </div>
+      <div class="footer">
+        <p>You are receiving this alert because your company profile matches this opportunity.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

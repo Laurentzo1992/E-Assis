@@ -1,0 +1,390 @@
+{
+  "common": {
+    "envoyer": "Tʋm-y",
+    "retour": "Lebg-y",
+    "chargement": "A watame...",
+    "mooreAvertissement": "Lebgre sẽn maan ne masin, ned sẽn gomd mooré pa lebs n ges ye",
+    "languageLabel": "Goam",
+    "languages": {
+      "fr": "Français",
+      "en": "English",
+      "mos": "Mooré"
+    }
+  },
+  "nav": {
+    "brand": "Veille Marchés",
+    "tarifs": "Ligidi-yaoodo",
+    "connexion": "Kẽ-y (connexion)",
+    "inscription": "Sãk-y (inscription)",
+    "toggleNavigation": "Yals-y menu wã"
+  },
+  "landing": {
+    "hero": {
+      "title": "Da bas-y tɩ marché public zĩig fãa sẽn be Burkina Faso zãmsg loog-y ye",
+      "subtitle": "Plateforme sẽn tar sɩda, sẽn pa tar zu-loeese, la sẽn tʋmd tao-tao n ges marchés publics fãa n kõ-y kibare wakat fãa",
+      "cta": "Sɩng mam gũusg (veille)",
+      "trialNote": "Rasem 30 yaa zaalem — ka carte bancaire ye"
+    },
+    "pricing": {
+      "title": "Ligidi-yaoodo sẽn yaa nana, entreprise ye ne a to",
+      "subtitle": "Maan-y zaalem pipi, yaa la y tõe n paas abonnement annuel sẽn ka zu-loeese.",
+      "freeTrial": {
+        "title": "Zaalem essai",
+        "daysValue": "Rasem {{count}}",
+        "note": "Ka bãmb sɛb ye, ka carte bancaire ye",
+        "cta": "Sɩng zaalem"
+      },
+      "annual": {
+        "title": "Abonnement yʋʋm-fãa",
+        "perCompanyPerYear": "entreprise ye ne a to, yʋʋmde"
+        ,
+        "cta": "Sɩng mam essai"
+      },
+      "paymentNote": "Yaoogo sẽn tar sɩda ne Mobile Money (Orange Money, Moov Money) bɩ carte bancaire.",
+      "seeDetails": "Ges-y avantages nins fãa sẽn be abonnement wã pʋgẽ"
+    },
+    "mission": {
+      "title": "Tõnd mission",
+      "text": "Tõnd sõngda Burkina Faso entreprises tɩ b tõe n paam marchés publics tao-tao, n kõ-y kibare sẽn yaa vẽenese, sẽn zems-y la sẽn ta-y."
+    },
+    "vision": {
+      "title": "Tõnd vision",
+      "text": "Paas-y bũmb sõma sẽn be Burkina Faso entreprises fãa yĩnga, la kɩt tɩ marché public fãa tõe paam-a ne click a yembre bala."
+    },
+    "features": {
+      "title": "Bõe yĩng tɩ y segd n tũ tõnd solution?",
+      "security": {
+        "title": "Y kibay bãane",
+        "description": "Y kibay bãane ne standards sẽn tar pãnga, la chiffrement sẽn kɩt tɩ ned a to ka tõe n ges ye."
+      },
+      "monitoring": {
+        "title": "Gũusg sẽn maand a toore (automatique)",
+        "description": "Système sẽn tar yam n gũud marchés publics fãa y yĩnga, tũ nins y sẽn yãk (critères) wã."
+      },
+      "stats": {
+        "title": "Sɩlem la alertes",
+        "description": "Y tõe n ges tendances, deeg alertes wakat fãa, la yãk decisions sẽn tik y kibay zugu."
+      }
+    }
+  },
+  "tarifs": {
+    "title": "Ligidi-yaoodo sẽn yaa nana, entreprise ye ne a to",
+    "subtitle": "Maan-y zaalem pipi, yaa la y tõe n paas abonnement annuel sẽn ka zu-loeese.",
+    "freeTrial": {
+      "title": "Zaalem essai",
+      "daysValue": "Rasem {{count}}",
+      "note": "Ka bãmb sɛb ye, ka carte bancaire ye",
+      "cta": "Sɩng zaalem"
+    },
+    "annual": {
+      "title": "Abonnement yʋʋm-fãa",
+      "perCompanyPerYear": "entreprise ye ne a to, yʋʋmde",
+      "cta": "Sɩng mam essai"
+    },
+    "included": {
+      "title": "Bũmb nins sẽn be abonnement wã pʋgẽ",
+      "avantages": [
+        "Gũusg sẽn maand a toore, daar fãa, Burkina Faso marchés publics zugu",
+        "Alertes sẽn zems y domaines la secteurs d'activité",
+        "Y candidatures résultats gũusgo",
+        "Bulletins la documents officiels fãa paalem sẽn ka gilli",
+        "Entreprises wʋsg gestion, compte a yembre pʋgẽ"
+      ]
+    },
+    "paymentNote": "Yaoogo sẽn tar sɩda ne Mobile Money (Orange Money, Moov Money) bɩ carte bancaire."
+  },
+  "inscription": {
+    "title": "Entreprise Sãkre (Inscription)",
+    "subtitle": "Wa naag tõnd plateforme wã rũnda",
+    "placeholders": {
+      "nom": "Représentant yʋʋre",
+      "prenom": "Représentant yʋʋr-bilfu",
+      "email": "Adresse email",
+      "password": "Mot de passe",
+      "password2": "Le gʋls f mot de passe"
+    },
+    "errors": {
+      "nom": "Représentant yʋʋre yaa tɩlae",
+      "prenom": "Représentant yʋʋr-bilfu yaa tɩlae",
+      "emailRequired": "Email yaa tɩlae",
+      "emailInvalid": "Email wã pa zems ye",
+      "passwordRequired": "Mot de passe yaa tɩlae",
+      "password2Required": "Y segd n le gʋls f mot de passe",
+      "passwordMismatch": "Mots de passe a yiibã pa zemse"
+    },
+    "alerts": {
+      "googleError": "Zu-loees be y Google compte tʋʋmd pʋgẽ. Maan-y lebre.",
+      "registrationError": "Sãkre zu-loeese : {{detail}}",
+      "unexpectedError": "Zu-loees a yembr sẽn ka baoode maan sãkre wakate.",
+      "networkError": "Réseau bɩ serveur zu-loeese. Maan-y lebre sã n yaa beoogo."
+    },
+    "submit": {
+      "loading": "Sãkre bee sɩngre...",
+      "default": "Naan entreprise compte"
+    },
+    "divider": "Bɩ y tũ ne",
+    "alreadyAccount": "Y tara compte n deng?",
+    "login": "Kẽ-y (se connecter)",
+    "terms": "Y sã n sãke, y sakda tõnd conditions d'utilisation la politique de confidentialité"
+  },
+  "connexion": {
+    "title": "Connexion",
+    "subtitle": "Kẽ-y y Veille Marchés zĩiga",
+    "placeholders": {
+      "email": "Adresse email",
+      "password": "Mot de passe"
+    },
+    "rememberMe": "Tẽeg-y maam",
+    "forgotPassword": "F yĩnem f mot de passe?",
+    "submit": "Kẽ-y (se connecter)",
+    "divider": "Bɩ y tũ ne",
+    "google": "Google",
+    "noAccount": "Y ka tar compte ye?",
+    "signupLink": "Sãk-y zaalem",
+    "securityNote": "Y kibay bãane ne chiffrement sẽn tar pãnga wa banque wã rẽnda",
+    "errors": {
+      "notVerified": "Y compte nan ka vérifier ye. Ges-y y email n paam lien vérification wã.",
+      "invalidCredentials": "Identifiants ka zemse.",
+      "networkError": "Zu-loees be connexion ne serveur wã pʋgẽ. Maan-y lebre sã n yaa beoogo."
+    },
+    "resend": {
+      "button": "Le tʋm email vérification",
+      "sending": "A watame...",
+      "success": "Email vérification paalga tʋma. Ges-y y boîte de réception.",
+      "error": "Email vérification tʋʋbo pa tʋm ye. Maan-y lebre.",
+      "networkError": "Réseau zu-loees be email tʋʋbo pʋgẽ."
+    },
+    "forgotPasswordFlow": {
+      "emailRequired": "Gʋls-y y adresse email zugẽ, taoor n paase.",
+      "sending": "A watame...",
+      "genericSuccess": "Y adresse email sã n zems, lien réinitialisation tʋma y yĩnga.",
+      "networkError": "Réseau zu-loees be demande réinitialisation pʋgẽ."
+    }
+  },
+  "resetPassword": {
+    "title": "Mot de passe paalga",
+    "subtitle": "Yãk-y mot de passe paalga y compte yĩnga",
+    "placeholders": {
+      "newPassword": "Mot de passe paalga",
+      "confirmPassword": "Le gʋls mot de passe wã"
+    },
+    "show": "Puk-y",
+    "hide": "Solg-y",
+    "submit": {
+      "default": "Le sɩng mot de passe (réinitialiser)",
+      "loading": "A bee réinitialisation..."
+    },
+    "success": "Y mot de passe réinitialiser ne sɩda. Y bee lebg n kẽnd connexion...",
+    "errors": {
+      "mismatch": "Mots de passe a yiibã pa zemse.",
+      "invalidLink": "Lien réinitialisation wã pa zems bɩ a sãame.",
+      "network": "Réseau zu-loeese. Maan-y lebre sã n yaa beoogo."
+    },
+    "backToLogin": "Lebg-y connexion"
+  },
+  "activation": {
+    "title": "Compte activation",
+    "inProgress": "Activation bee sɩngre...",
+    "success": "Y compte activer ne sɩda.",
+    "alreadyActive": "Y compte activer sɩda. Y tõe n kẽ (se connecter).",
+    "genericError": "Lien activation wã pa zems bɩ a sãame.",
+    "fetchError": "Zu-loees be compte activation pʋgẽ."
+  },
+  "emailVerificationSent": {
+    "title": "Email vérification tʋma",
+    "text": "Lien activation tʋma y adresse email zugu. Ges-y a zugu n paam y compte activation.",
+    "backHome": "Lebg-y zĩig pipi (accueil)"
+  },
+  "paymentReturn": {
+    "title": "Yaoogo lebgre",
+    "loading": "A bee y abonnement statut gũusgo...",
+    "missingEntreprise": "Entreprise identifiant ka be URL lebgre wã pʋgẽ ye.",
+    "errorPrefix": "Ka tõe n ges statut wã rũnda ye : {{error}}. Yaoogo sã n maan ne sɩda, a na n kẽ y compte pʋgẽ système wã sã n confirmé-a.",
+    "successPrefix": "Yaoogo confirmer! Y abonnement bee actif hal ta {{date}}.",
+    "pending": "Y yaoogo bee confirmation pʋgẽ. Rẽ tõe n tar wakat bilfu - lebg-y y tableau de bord zugu bilfu poore n ges statut paalga.",
+    "backToDashboard": "Lebg-y tableau de bord zugu"
+  },
+  "footer": {
+    "brand": "Veille Marchés",
+    "description": "Solution sẽn tar yam marchés publics gũusg yĩnga",
+    "navigation": {
+      "title": "Navigation",
+      "home": "Zĩig pipi (accueil)",
+      "features": "Tʋʋm-taase (fonctionnalités)",
+      "pricing": "Ligidi-yaoodo"
+    },
+    "contact": {
+      "title": "Contact"
+    },
+    "copyright": "© {{year}} Veille Marchés. Zu-loees fãa gãneg ne-b."
+  },
+  "dashboard": {
+    "common": {
+      "fermer": "Tõgs-y (fermer)",
+      "ajouter": "Paas-y",
+      "retirerLabel": "Yiis-y {{label}}",
+      "aucunResultat": "Bũmb ka be ye",
+      "chargementCourt": "A watame...",
+      "erreurChargementCourt": "Chargement zu-loeese: {{message}}",
+      "chargementDonneesEntreprise": "A bee entreprise wã kibay gũusgo...",
+      "erreurChargementEntreprise": "Zu-loees be entreprise wã chargement pʋgẽ : {{message}}. Maan-y lebre (recharger) zug wã.",
+      "chargementSecteurs": "A bee secteurs d'activité gũusgo...",
+      "erreurChargementSecteurs": "Secteurs d'activité chargement zu-loeese: {{message}}",
+      "chargementDomaines": "A bee domaines d'activité gũusgo...",
+      "erreurChargementDomaines": "Domaines d'activité chargement zu-loeese: {{message}}",
+      "rechercherSecteur": "Bao-y secteur d'activité a yembre...",
+      "placeholderAjouterDomaine": "Paas-y domaine d'activité sẽn ka be liste wã pʋgẽ...",
+      "echecAjoutDomaineInline": "Domaine paasg zu-loeese : {{message}}",
+      "redirection": "A bee lebgre (redirection)...",
+      "sabonner": "Maan-y abonnement",
+      "bannerEssai": "Zaalem essai — rasem {{jours}} n kell {{nom}} yĩnga.",
+      "bannerExpire": "{{nom}} essai/abonnement wã sãame. Maan-y abonnement n tõog n paam alertes.",
+      "erreurAvecMessage": "Zu-loeese: {{message}}",
+      "nonApplicable": "N/A"
+    },
+    "sidebar": {
+      "brand": "VeilleMarches Pro",
+      "chargementEntreprises": "A bee entreprises gũusgo...",
+      "erreurChargementEntreprises": "Entreprises chargement zu-loeese: {{message}}",
+      "entrepriseActiveLabel": "Entreprise sẽn tʋmd (active) :",
+      "selectionnerEntreprise": "Yãk-y entreprise a yembre",
+      "aucuneEntreprise": "Entreprise ka be ye.",
+      "ajouterEntreprise": "Paas-y entreprise a yembre",
+      "navAccueil": "Zĩig pipi (accueil)",
+      "navAlertes": "Alertes la Résultats",
+      "navAlertesCourt": "Alertes",
+      "navProfil": "Profil",
+      "deconnexion": "Yi-y (déconnexion)",
+      "succesChangementEntreprise": "Entreprise active toeeme ne sɩda !",
+      "echecChangementEntreprise": "Entreprise active toeego zu-loeese: {{message}}"
+    },
+    "accueil": {
+      "titre": "Tableau de bord",
+      "sousTitre": "Y gũusg (veille) tʋʋm-taase zĩiga",
+      "pasEntreprise": "Maan-y y entreprise wã naan n tõog n kẽ tableau de bord wã.",
+      "kpiAppelsOffres": "Kibs (appels d'offres) kiuug kãnga yĩnga ({{nom}} yĩnga)",
+      "kpiAlertesNonLues": "Alertes sẽn ka karem ({{nom}} yĩnga)",
+      "kpiDerniereRevue": "Revue paalga sẽn kẽ wakat",
+      "dateNonDisponible": "A ka be ye",
+      "actionsRapides": "Tʋʋm-tao-taose",
+      "btnModifierParametres": "Toeem-y y compte paramètres",
+      "btnVoirAlertes": "Ges-y alertes paala"
+    },
+    "alertes": {
+      "titre": "Alertes la Résultats",
+      "sousTitre": "Alertes la candidatures résultats gũusgo",
+      "pasEntreprise": "Maan-y y entreprise wã naan n tõog n paam y alertes la résultats.",
+      "titreCarteAlertes": "Alertes sẽn paam ({{nom}} yĩnga)",
+      "chargementAlertes": "A bee alertes gũusgo...",
+      "erreurChargementAlertes": "Alertes chargement zu-loeese : {{message}}",
+      "aucuneAlerte": "Alerte ka be y entreprise yĩnga ye.",
+      "badgeNouveau": "Paalga",
+      "typeOffre": "KIBS (OFFRE)",
+      "canal": "Sore (canal)",
+      "publicationLabel": "Publication",
+      "entrepriseLabel": "Entreprise",
+      "voirBulletin": "Ges-y bulletin wã",
+      "titreCarteResultats": "Résultats paala ({{nom}} yĩnga)",
+      "chargementResultats": "A bee résultats gũusgo...",
+      "erreurChargementResultats": "Résultats chargement zu-loeese : {{message}}",
+      "aucunResultat": "Résultat ka be y entreprise yĩnga ye.",
+      "retenu": "B yãka-a (retenu)",
+      "nonRetenu": "B ka yãk-a ye",
+      "resultatPublieLe": "Résultat wã puki",
+      "attributaireLabel": "Sẽn deeg-a (attributaire)",
+      "montantAttribueLabel": "Ligidi sẽn kõ-a",
+      "voirAnnonce": "Ges-y annonce officiel wã"
+    },
+    "profil": {
+      "titre": "Profil",
+      "sousTitre": "Y entreprise kibay gestion",
+      "chargementProfil": "A bee entreprise wã profil gũusgo...",
+      "erreurChargementProfil": "Zu-loees be profil wã chargement pʋgẽ : {{message}}. Maan-y lebre zug wã.",
+      "pasEntreprise": "Maan-y y entreprise wã naan n tõog n ges y profil wã.",
+      "abonnement": {
+        "titre": "Abonnement",
+        "chargement": "A bee abonnement gũusgo...",
+        "erreur": "Abonnement chargement zu-loeese : {{message}}",
+        "aucuneInfo": "Abonnement kibare ka be ye.",
+        "badgeEssai": "Zaalem essai",
+        "essaiTexte": "Rasem {{jours}} n kell, hal ta {{date}}.",
+        "badgeActif": "A tʋmda (actif)",
+        "actifTexte": "Abonnement wã tara sɩda hal ta {{date}}.",
+        "badgeExpire": "A sãame (expiré)",
+        "expireTexte": "Maan-y abonnement n tõog n paam alertes.",
+        "sabonnerAnnuel": "Maan-y abonnement (yʋʋm-fãa)",
+        "echecPaiement": "Ka tõe n sɩng yaoogo wã ye : {{message}}"
+      },
+      "entreprise": {
+        "titre": "Entreprise kibay",
+        "labelNom": "Entreprise yʋʋre",
+        "labelNumeroId": "Numéro d'identification",
+        "labelRccm": "Numéro RCCM",
+        "labelNomRepresentant": "Représentant yʋʋre",
+        "labelPrenomRepresentant": "Représentant yʋʋr-bilfu",
+        "labelAdresse": "Adresse",
+        "labelEmail": "Email",
+        "labelTelephone": "Téléphone",
+        "labelSecteurs": "Secteurs d'activité",
+        "labelDomaines": "Domaines d'activité",
+        "btnEnregistrement": "A gũusdame (enregistrement)...",
+        "btnEnregistrer": "Gũus-y toeems wã",
+        "erreurAucuneActive": "Entreprise sẽn tʋmd (active) ka be n tõe n toeeme ye.",
+        "succesMiseAJour": "Profil wã paalg ne sɩda !"
+      },
+      "secteurs": {
+        "titre": "Paas-y secteur d'activité paalga",
+        "labelNom": "Secteur yʋʋre",
+        "btnAjouter": "Paas-y secteur wã",
+        "succesAjout": "Secteur wã paasa ne sɩda !",
+        "echecAjout": "Secteur paasg zu-loeese: {{message}}"
+      },
+      "domaines": {
+        "titre": "Paas-y domaine d'activité paalga",
+        "labelLibelle": "Domaine yʋʋre",
+        "btnAjouter": "Paas-y domaine wã",
+        "succesAjout": "Domaine wã paasa ne sɩda !",
+        "echecAjout": "Domaine paasg zu-loeese: {{message}}"
+      },
+      "motDePasse": {
+        "titre": "Toeem-y mot de passe wã",
+        "labelActuel": "Mot de passe sẽn be rũnda",
+        "labelNouveau": "Mot de passe paalga",
+        "labelConfirmer": "Le gʋls mot de passe paalga wã",
+        "btnMiseAJour": "A bee paalgre...",
+        "btnMettreAJour": "Toeem-y mot de passe wã",
+        "erreurMismatch": "Mots de passe paala a yiibã pa zemse.",
+        "erreurChampsRequis": "Pʋʋs-y zĩis fãa sẽn tar mot de passe wã.",
+        "succes": "Mot de passe wã paalg ne sɩda !",
+        "echec": "Mot de passe toeego zu-loeese : {{message}}"
+      }
+    },
+    "modales": {
+      "ajoutEntreprise": {
+        "titre": "Naan-y y entreprise",
+        "intro": "Maan-y gʋls-y y entreprise kibay n sɩng.",
+        "labelNom": "Entreprise yʋʋre *",
+        "labelNumeroId": "Numéro d'identification *",
+        "labelRccm": "Numéro RCCM *",
+        "labelSecteurs": "Secteurs d'activité *",
+        "labelDomaines": "Domaines d'activité *",
+        "btnCreation": "A naanda...",
+        "btnCreer": "Naan-y entreprise wã",
+        "erreurSecteurRequis": "Yãk-y secteur d'activité a yembre bɩ zãma.",
+        "succes": "Entreprise wã naan la a lebg active ne sɩda !",
+        "echec": "Entreprise naanego zu-loeese: {{message}}"
+      },
+      "apercu": {
+        "titre": "Document aperçu",
+        "numeroPublieLe": "Numéro {{numero}} - A puki {{date}}",
+        "pageSuffix": " - Page {{page}}",
+        "chargement": "A bee document gũusgo...",
+        "erreur": "Ka tõe n puk document wã ye : {{error}}"
+      },
+      "alerte": {
+        "succes": "Sɩda (succès)",
+        "erreur": "Zu-loeese"
+      }
+    }
+  }
+}

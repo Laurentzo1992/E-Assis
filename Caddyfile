@@ -1,0 +1,28 @@
+# Reverse-proxy avec HTTPS automatique (Let's Encrypt, gere entierement par Caddy - aucun
+# certificat a generer/renouveler a la main). Un seul domaine (kbot.logo-services.com) reparti par
+# chemin plutot que deux sous-domaines separes : /api/*, /admin* et /health vers le backend
+# FastAPI, /kbbot/* (nom du bucket MINIO_BUCKET) vers MinIO pour que les URL presignees de
+# telechargement de PDF (api/minio_client.py) passent en HTTPS plutot qu'en http:// direct - sinon
+# le navigateur les bloque en mixed-content depuis cette page HTTPS. Tout le reste vers le
+# frontend statique.
+kbot.logo-services.com {
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle /admin* {
+		reverse_proxy api:8000
+	}
+
+	handle /health {
+		reverse_proxy api:8000
+	}
+
+	handle /kbbot/* {
+		reverse_proxy minio:9000
+	}
+
+	handle {
+		reverse_proxy frontend:80
+	}
+}
